@@ -80,7 +80,6 @@ def test_restore_multiple_namespaces(
                 "volume_mode": DataVolume.VolumeMode.FILE,
                 "rhel_image": Images.Rhel.RHEL9_3_IMG,
             },
-
             marks=pytest.mark.polarion("CNV-10565"),
         ),
         pytest.param(
@@ -99,7 +98,9 @@ def test_restore_multiple_namespaces(
     indirect=True,
 )
 def test_backup_vm_data_volume_template_with_datamover(
-    stopped_vm, rhel_vm_with_data_volume_template, velero_restore_first_namespace_with_datamover,
+    stopped_vm,
+    rhel_vm_with_data_volume_template,
+    velero_restore_first_namespace_with_datamover,
 ):
     if stopped_vm:
         running_vm(vm=rhel_vm_with_data_volume_template)
