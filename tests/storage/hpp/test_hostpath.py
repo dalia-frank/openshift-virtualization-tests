@@ -335,9 +335,9 @@ def test_hpp_not_specify_node_immediate(
         source="http",
         dv_name="cnv-3354",
         namespace=namespace.name,
-        url=f"{get_test_artifact_server_url()}{Images.Windows.WIN2k16_UEFI_IMG}",
+        url=f"{get_test_artifact_server_url()}{Images.Windows.WIN11_IMG}",
         content_type=DataVolume.ContentType.KUBEVIRT,
-        size="35Gi",
+        size=Images.Windows.DEFAULT_DV_SIZE,
         storage_class=[*storage_class_matrix_hpp_matrix__module__][0],
     ) as dv:
         dv.wait_for_status(

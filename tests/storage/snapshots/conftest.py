@@ -13,8 +13,8 @@ from ocp_resources.virtual_machine_snapshot import VirtualMachineSnapshot
 from pyhelper_utils.shell import run_ssh_commands
 
 from tests.storage.snapshots.constants import WINDOWS_DIRECTORY_PATH
-from tests.storage.snapshots.utils import assert_directory_existence
-from tests.storage.utils import create_windows19_vm, set_permissions
+from tests.storage.snapshots.utils import assert_directory_existence, create_windows11_vm
+from tests.storage.utils import set_permissions
 from utilities.constants import TIMEOUT_10MIN, UNPRIVILEGED_USER
 
 LOGGER = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ def windows_vm_for_snapshot(
     modern_cpu_for_migration,
     storage_class_matrix_snapshot_matrix__module__,
 ):
-    with create_windows19_vm(
+    with create_windows11_vm(
         dv_name=request.param["dv_name"],
         namespace=namespace.name,
         client=unprivileged_client,

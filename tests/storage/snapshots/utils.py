@@ -1,14 +1,23 @@
 import ast
 import shlex
+from contextlib import contextmanager
 
 import pytest
 from kubernetes.client.rest import ApiException
+from ocp_resources.datavolume import DataVolume
+from ocp_resources.template import Template
 from ocp_resources.virtual_machine_snapshot import VirtualMachineSnapshot
 from pyhelper_utils.shell import run_ssh_commands
 
 from tests.storage.snapshots.constants import ERROR_MSG_USER_CANNOT_CREATE_VM_SNAPSHOTS
-from utilities.constants import TIMEOUT_10MIN
-from utilities.virt import running_vm
+from utilities.constants import TIMEOUT_10MIN, Images
+from utilities.infra import (
+    cleanup_artifactory_secret_and_config_map,
+    get_artifactory_config_map,
+    get_artifactory_secret,
+    get_http_image_url,
+)
+from utilities.virt import VirtualMachineForTestsFromTemplate, get_windows_os_dict, running_vm
 
 
 def expected_output_after_restore(snapshot_number):
@@ -54,3 +63,35 @@ def assert_directory_existence(expected_result, windows_vm, directory_path):
 def start_windows_vm_after_restore(vm_restore, windows_vm):
     vm_restore.wait_restore_done(timeout=TIMEOUT_10MIN)
     running_vm(vm=windows_vm)
+
+
+@contextmanager
+def create_windows11_vm(dv_name, namespace, client, vm_name, cpu_model, storage_class):
+    artifactory_secret = get_artifactory_secret(namespace=namespace)
+    artifactory_config_map = get_artifactory_config_map(namespace=namespace)
+    dv = DataVolume(
+        name=dv_name,
+        namespace=namespace,
+        storage_class=storage_class,
+        source="http",
+        url=get_http_image_url(image_directory=Images.Windows.UEFI_WIN_DIR, image_name=Images.Windows.WIN11_IMG),
+        size=Images.Windows.DEFAULT_DV_SIZE,
+        client=client,
+        api_name="storage",
+        secret=artifactory_secret,
+        cert_configmap=artifactory_config_map.name,
+    )
+    dv.to_dict()
+    with VirtualMachineForTestsFromTemplate(
+        name=vm_name,
+        namespace=namespace,
+        client=client,
+        labels=Template.generate_template_labels(**get_windows_os_dict(windows_version="win-11")["template_labels"]),
+        cpu_model=cpu_model,
+        data_volume_template={"metadata": dv.res["metadata"], "spec": dv.res["spec"]},
+    ) as vm:
+        running_vm(vm=vm)
+        yield vm
+    cleanup_artifactory_secret_and_config_map(
+        artifactory_secret=artifactory_secret, artifactory_config_map=artifactory_config_map
+    )
