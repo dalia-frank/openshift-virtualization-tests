@@ -31,6 +31,10 @@ SMALLEST_POSSIBLE_EXPAND = "1Gi"
 STORED_FILENAME = "random_data_file"
 
 
+def convert_gib_to_byte(size):
+    return int(size[:-2]) * 1024**3
+
+
 @contextmanager
 def clone_dv(dv, size):
     with create_dv(
@@ -293,8 +297,10 @@ def test_disk_expand_then_clone_fail(
     ) as dv:
         wait_for_condition_message_value(
             resource=dv,
-            expected_message="The clone doesn't meet the validation requirements: target resources \
-requests storage size is smaller than the source 1073741824 < 2147483648",
+            expected_message=f"The clone doesn't meet the validation requirements: "
+            f"target resources requests storage size is smaller than "
+            f"the source {convert_gib_to_byte(size=Images.Cirros.DEFAULT_DV_SIZE)}"
+            f" {convert_gib_to_byte(size=cirros_dv_for_online_resize.pvc.instance.status.capacity.storage)}",
         )
 
 
