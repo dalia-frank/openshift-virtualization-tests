@@ -9,8 +9,8 @@ import pytest
 from ocp_resources.datavolume import DataVolume
 from ocp_resources.storage_profile import StorageProfile
 
-from tests.os_params import WINDOWS_LATEST, WINDOWS_LATEST_LABELS
-from utilities.constants import HOTPLUG_DISK_SERIAL
+from tests.os_params import WINDOWS_LATEST, WINDOWS_LATEST_LABELS, WINDOWS_11, WINDOWS_11_TEMPLATE_LABELS
+from utilities.constants import HOTPLUG_DISK_SERIAL, Images
 from utilities.storage import (
     assert_disk_serial,
     assert_hotplugvolume_nonexist_optional_restart,
@@ -261,14 +261,14 @@ class TestHotPlugWithSerialPersist:
         pytest.param(
             {
                 "dv_name": "dv-windows",
-                "image": WINDOWS_LATEST["image_path"],
-                "dv_size": WINDOWS_LATEST["dv_size"],
+                "image": f"{Images.Windows.DIR}/{Images.Windows.WIN11_IMG}",
+                "dv_size": Images.Windows.DEFAULT_DV_SIZE,
             },
             {
-                "vm_name": f"vm-win-{WINDOWS_LATEST['os_version']}",
-                "template_labels": WINDOWS_LATEST_LABELS,
+                "vm_name": f"vm-win-{WINDOWS_11['os_version']}",
+                "template_labels": WINDOWS_11_TEMPLATE_LABELS,
             },
-            {"os_version": WINDOWS_LATEST["os_version"]},
+            {"os_version": WINDOWS_11["os_version"]},
             {"persist": True, "serial": HOTPLUG_DISK_SERIAL},
         ),
     ],
