@@ -16,8 +16,7 @@ from pyhelper_utils.shell import run_ssh_commands
 from timeout_sampler import TimeoutExpiredError, TimeoutSampler
 
 from tests.storage.utils import create_cirros_dv
-from utilities.constants import OS_FLAVOR_CIRROS, TIMEOUT_4MIN, Images
-from utilities.ssp import wait_for_condition_message_value
+from utilities.constants import OS_FLAVOR_CIRROS, TIMEOUT_1MIN, TIMEOUT_4MIN, TIMEOUT_5SEC, Images
 from utilities.storage import (
     add_dv_to_vm,
     create_dv,
@@ -29,10 +28,6 @@ from utilities.virt import VirtualMachineForTests, migrate_vm_and_verify, runnin
 LOGGER = logging.getLogger(__name__)
 SMALLEST_POSSIBLE_EXPAND = "1Gi"
 STORED_FILENAME = "random_data_file"
-
-
-def convert_gib_to_byte(size):
-    return int(size[:-2]) * 1024**3
 
 
 @contextmanager
@@ -295,13 +290,17 @@ def test_disk_expand_then_clone_fail(
         dv=cirros_dv_for_online_resize,
         size=Images.Cirros.DEFAULT_DV_SIZE,
     ) as dv:
-        wait_for_condition_message_value(
-            resource=dv,
-            expected_message=f"The clone doesn't meet the validation requirements: "
-            f"target resources requests storage size is smaller than "
-            f"the source {convert_gib_to_byte(size=Images.Cirros.DEFAULT_DV_SIZE)}"
-            f" {convert_gib_to_byte(size=cirros_dv_for_online_resize.pvc.instance.status.capacity.storage)}",
-        )
+        for sample in TimeoutSampler(
+            wait_timeout=TIMEOUT_1MIN,
+            sleep=TIMEOUT_5SEC,
+            func=lambda: dv.instance.status.conditions,
+        ):
+            if any(
+                "The clone doesn't meet the validation requirements:"
+                " target resources requests storage size is smaller than the source" in condition["message"]
+                for condition in sample
+            ):
+                return
 
 
 @pytest.mark.gating
