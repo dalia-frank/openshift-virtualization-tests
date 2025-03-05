@@ -8,6 +8,11 @@ When running Windows tests, the cluster should have at least 16GiB RAM (XL deplo
 and 80G volume size (default deployment configuration).
 
 Upgrade tests must be run against a large deployment(24GiB RAM, 250GB volume size)
+Upgrade network tests can't be run against a non-multi-nic cluster. To run upgrade against
+such clusters, we must ignore network component
+```bash
+--ignore=tests/network/
+```
 
 ## Prerequirements
 
@@ -316,9 +321,15 @@ Available storage classes can be found in `global_config.py` under `storage_clas
 Example:
 
 ```bash
---storage-class-matrix=rook-ceph-block
---storage-class-matrix=rook-ceph-block,nfs
+--storage-class-matrix=ocs-storagecluster-ceph-rbd-virtualization
 ```
+Two storage classes hostpath-csi-pvc-block and hostpath-csi-basic can be added to global config's storage_class_matrix, via command-line:
+```bash
+--storage-class-matrix=ocs-storagecluster-ceph-rbd-virtualization,hostpath-csi-basic,hostpath-csi-pvc-block
+--storage-class-matrix=ocs-storagecluster-ceph-rbd-virtualization,hostpath-csi-basic
+```
+
+Note: hostpath-csi-pvc-block and hostpath-csi-basic are not expected to be deployed in the same cluster with lvms-vg1.
 
 ### Using matrix fixtures
 

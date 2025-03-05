@@ -66,6 +66,7 @@ from utilities.constants import (
     EXCLUDED_OLD_CPU_MODELS,
     HCO_CATALOG_SOURCE,
     IMAGE_CRON_STR,
+    KUBECONFIG,
     KUBELET_READY_CONDITION,
     NET_UTIL_CONTAINER_IMAGE,
     OC_ADM_LOGS_COMMAND,
@@ -818,7 +819,7 @@ def run_virtctl_command(command, virtctl_binary=VIRTCTL, namespace=None, check=F
         tuple: True, out if command succeeded, False, err otherwise.
     """
     virtctl_cmd = [virtctl_binary]
-    kubeconfig = os.getenv("KUBECONFIG")
+    kubeconfig = os.getenv(KUBECONFIG)
     if namespace:
         virtctl_cmd.extend(["-n", namespace])
 
@@ -1425,6 +1426,18 @@ def get_nodes_cpu_model(nodes):
 
     :return: Dict of nodes and associated cpu models
     """
+    if is_jira_open(jira_id="CNV-57387"):
+        obsolete_cpu = [
+            "core",
+            "kvm",
+            "n270",
+            "pentium",
+            "qemu",
+            "486",
+        ]
+        EXCLUDED_CPU_MODELS.extend(obsolete_cpu)
+        EXCLUDED_OLD_CPU_MODELS.extend(obsolete_cpu)
+
     nodes_cpu_model = {"common": {}, "modern": {}}
     for node in nodes:
         nodes_cpu_model["common"][node.name] = set()

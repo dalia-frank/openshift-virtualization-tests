@@ -629,20 +629,6 @@ def nodes_available_nics(nodes_active_nics):
     return {node: nodes_active_nics[node]["available"] for node in nodes_active_nics.keys()}
 
 
-@pytest.fixture(scope="session")
-def multi_nics_nodes(hosts_common_available_ports):
-    """
-    Check if nodes has any available NICs
-    """
-    return len(hosts_common_available_ports) > 1
-
-
-@pytest.fixture(scope="session")
-def skip_if_no_multinic_nodes(multi_nics_nodes):
-    if not multi_nics_nodes:
-        pytest.skip("Only run on multi NICs node")
-
-
 @pytest.fixture(scope="module")
 def namespace(request, admin_client, unprivileged_client):
     """
@@ -1079,7 +1065,7 @@ def sriov_workers(schedulable_nodes):
 
 
 @pytest.fixture(scope="session")
-def vlan_base_iface(skip_if_no_multinic_nodes, worker_node1, nodes_available_nics):
+def vlan_base_iface(worker_node1, nodes_available_nics):
     # Select the last NIC from the list as a way to ensure that the selected NIC
     # is not already used (e.g. as a bond's port).
     return nodes_available_nics[worker_node1.name][-1]
@@ -1762,7 +1748,6 @@ def term_handler_scope_session():
 
 @pytest.fixture(scope="session")
 def upgrade_bridge_on_all_nodes(
-    skip_if_no_multinic_nodes,
     label_schedulable_nodes,
     hosts_common_available_ports,
 ):
@@ -2041,12 +2026,6 @@ def golden_images_data_import_crons_scope_class(admin_client, golden_images_name
 @pytest.fixture(scope="session")
 def compact_cluster(nodes, workers, control_plane_nodes):
     return len(nodes) == len(workers) == len(control_plane_nodes) == 3
-
-
-@pytest.fixture(scope="session")
-def skip_if_compact_cluster(compact_cluster):
-    if compact_cluster:
-        pytest.skip("Test cannot run on compact cluster")
 
 
 @pytest.fixture()
@@ -2425,6 +2404,16 @@ def is_disconnected_cluster():
 
 @pytest.fixture()
 def migration_policy_with_bandwidth():
+    with MigrationPolicy(
+        name="migration-policy",
+        bandwidth_per_migration="128Ki",
+        vmi_selector=MIGRATION_POLICY_VM_LABEL,
+    ) as mp:
+        yield mp
+
+
+@pytest.fixture(scope="class")
+def migration_policy_with_bandwidth_scope_class():
     with MigrationPolicy(
         name="migration-policy",
         bandwidth_per_migration="128Ki",
