@@ -6,9 +6,8 @@ import os
 
 import pytest
 from ocp_resources.datavolume import DataVolume
-from pytest_testconfig import config as py_config
-from tests.os_params import WINDOWS_11, WINDOWS_11_TEMPLATE_LABELS
 
+from tests.os_params import WINDOWS_11, WINDOWS_11_TEMPLATE_LABELS
 from tests.storage.utils import (
     assert_pvc_snapshot_clone_annotation,
     assert_use_populator,
@@ -160,7 +159,7 @@ def test_successful_vm_restart_with_cloned_dv(
             {
                 "vm_name": f"vm-win-{WINDOWS_11['os_version']}",
                 "template_labels": WINDOWS_11_TEMPLATE_LABELS,
-                "os_version": WINDOWS_11['os_version'],
+                "os_version": WINDOWS_11["os_version"],
                 "ssh": True,
             },
             marks=pytest.mark.polarion("CNV-3638"),
