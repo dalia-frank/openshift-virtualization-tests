@@ -16,7 +16,6 @@ from json import JSONDecodeError
 from subprocess import run
 from typing import TYPE_CHECKING, Any
 
-import bitmath
 import jinja2
 import pexpect
 import yaml
@@ -24,6 +23,7 @@ from benedict import benedict
 from kubernetes.client import ApiException
 from kubernetes.dynamic import DynamicClient
 from kubernetes.dynamic.exceptions import NotFoundError
+from kubernetes.utils.quantity import parse_quantity
 from ocp_resources.daemonset import DaemonSet
 from ocp_resources.datavolume import DataVolume
 from ocp_resources.kubevirt import KubeVirt
@@ -281,6 +281,7 @@ class VirtualMachineForTests(VirtualMachine):
         hugepages_page_size=None,
         vm_affinity=None,
         annotations=None,
+        label=None,
     ):
         """
         Virtual machine creation
@@ -346,7 +347,8 @@ class VirtualMachineForTests(VirtualMachine):
                 Is set to True if py_config["data_collector"] is True.
             priority_class_name (str, optional): The name of the priority class used for the VM
             dry_run (str, default=None): If "All", the resource will be created using the dry_run flag
-            additional_labels (dict, optional): Dict of additional labels for VM (e.g. {"vm-label": "best-vm"})
+            additional_labels (dict, optional): Dict of additional labels for VMI template (e.g. {"vm-label": "best-vm"})
+            label (dict, optional): Dict of labels for VM metadata (e.g. {"changedBlockTracking": "true"})
             generate_unique_name: if True then it will set dynamic name for the vm, False will use the name of vm passed
             node_selector_labels (str, optional): Labels for node selector.
             vm_instance_type (VirtualMachineInstancetype, optional): instance type object for the VM
@@ -375,6 +377,7 @@ class VirtualMachineForTests(VirtualMachine):
             node_selector=node_selector,
             node_selector_labels=node_selector_labels,
             yaml_file=yaml_file,
+            label=label,
         )
         self.body = body
         self.interfaces = interfaces or []
@@ -694,7 +697,7 @@ class VirtualMachineForTests(VirtualMachine):
             )
 
     def _is_vm_from_template(self):
-        return f"{self.ApiGroup.VM_KUBEVIRT_IO}/template" in self.res["metadata"].setdefault("labels", {}).keys()
+        return f"{self.ApiGroup.VM_KUBEVIRT_IO}/template" in self.res["metadata"].setdefault("labels", {})
 
     def generate_body(self):
         if self.body:
@@ -728,7 +731,7 @@ class VirtualMachineForTests(VirtualMachine):
             LOGGER.warning(
                 "Setting both memory.guest and requests.memory values! (Users should set VM memory via memory.guest!)"
             )
-            if bitmath.parse_string_unsafe(self.memory_guest) > bitmath.parse_string_unsafe(self.memory_requests):
+            if parse_quantity(self.memory_guest) > parse_quantity(self.memory_requests):
                 LOGGER.warning(
                     "Setting memory.guest bigger then requests.memory! (This might cause unpredictable issues!)"
                 )
@@ -1849,7 +1852,7 @@ def running_vm(
         "Internal error occurred: unable to complete request: stop/start already underway",
     ]
     vm_dv_volumes_names_list = [
-        volume.dataVolume.name for volume in vm.instance.spec.template.spec.volumes if "dataVolume" in volume.keys()
+        volume.dataVolume.name for volume in vm.instance.spec.template.spec.volumes if "dataVolume" in volume
     ]
 
     try:
@@ -2145,6 +2148,7 @@ def create_vm_cloning_job(
     annotation_filters=None,
     new_mac_addresses=None,
     new_smbios_serial=None,
+    volume_name_policy=None,
 ):
     """
     Create VirtualMachineClone object.
@@ -2170,6 +2174,7 @@ def create_vm_cloning_job(
         annotation_filters=annotation_filters,
         new_mac_addresses=new_mac_addresses,
         new_smbios_serial=new_smbios_serial,
+        volume_name_policy=volume_name_policy,
     ) as vmc:
         vmc.wait_for_status(status=VirtualMachineClone.Status.SUCCEEDED)
         yield vmc
@@ -2560,8 +2565,8 @@ def wait_for_vmi_relocation_and_running(initial_node, vm, timeout=TIMEOUT_5MIN):
 
 
 def check_qemu_guest_agent_installed(ssh_exec: Host) -> bool:
-    ssh_exec.sudo = True
-    return ssh_exec.package_manager.exist(package="qemu-guest-agent")
+    rc, _, _ = ssh_exec.executor().run_cmd(cmd=shlex.split("rpm -q qemu-guest-agent"))
+    return rc == 0
 
 
 def validate_libvirt_persistent_domain(vm, admin_client):
