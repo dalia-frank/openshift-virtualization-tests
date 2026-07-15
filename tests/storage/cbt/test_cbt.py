@@ -12,8 +12,15 @@ Preconditions:
 import pytest
 
 from tests.storage.cbt.utils import (
+    assert_restored_vm_has_boot_and_data_disk_test_data,
+    assert_restored_vm_has_boot_and_hotplug_disk_test_data,
     assert_restored_vm_has_boot_and_incremental_test_data,
+    assert_restored_vm_has_boot_and_multi_incremental_test_data,
+    assert_restored_vm_has_boot_and_post_migration_test_data,
     assert_restored_vm_has_boot_test_data,
+    assert_restored_windows_vm_has_boot_and_incremental_test_data,
+    assert_restored_windows_vm_has_test_data,
+    assert_vm_has_boot_test_data,
 )
 
 
@@ -148,6 +155,11 @@ class TestIncrementalBackupRestore:
         )
 
 
+@pytest.mark.parametrize(
+    "vm_with_cbt_label",
+    [{"name": "cbt-multi-incr"}],
+    indirect=True,
+)
 class TestMultipleIncrementalBackups:
     """
     Multiple incremental backups and restore validation.
@@ -158,10 +170,11 @@ class TestMultipleIncrementalBackups:
         - Test data written to VM
     """
 
-    __test__ = False  # STD placeholder - not yet implemented
-
     @pytest.mark.polarion("CNV-16002")
-    def test_multiple_incremental_backups_push_mode_restore(self):
+    def test_multiple_incremental_backups_push_mode_restore(
+        self,
+        restored_vm_from_second_incremental_backup_push_mode,
+    ):
         """
         Test that a VM can be restored from multiple incremental backups (push mode) with all data present.
 
@@ -181,9 +194,15 @@ class TestMultipleIncrementalBackups:
         Expected:
             - Restored VM boots successfully and all test data is present
         """
+        assert_restored_vm_has_boot_and_multi_incremental_test_data(
+            vm=restored_vm_from_second_incremental_backup_push_mode,
+        )
 
     @pytest.mark.polarion("CNV-16001")
-    def test_multiple_incremental_backups_pull_mode_restore(self):
+    def test_multiple_incremental_backups_pull_mode_restore(
+        self,
+        restored_vm_from_second_incremental_backup_pull_mode,
+    ):
         """
         Test that a VM can be restored from multiple incremental backups (pull mode) with all data present.
 
@@ -203,8 +222,16 @@ class TestMultipleIncrementalBackups:
         Expected:
             - Restored VM boots successfully and all test data is present
         """
+        assert_restored_vm_has_boot_and_multi_incremental_test_data(
+            vm=restored_vm_from_second_incremental_backup_pull_mode,
+        )
 
 
+@pytest.mark.parametrize(
+    "vm_with_cbt_label",
+    [{"name": "cbt-multi-disk"}],
+    indirect=True,
+)
 class TestMultipleDiskBackup:
     """
     Backup and restore validation for VMs with multiple disks.
@@ -215,10 +242,11 @@ class TestMultipleDiskBackup:
         - Test data written to both disks
     """
 
-    __test__ = False  # STD placeholder - not yet implemented
-
     @pytest.mark.polarion("CNV-16003")
-    def test_backup_multiple_disks_push_mode_restore(self):
+    def test_backup_multiple_disks_push_mode_restore(
+        self,
+        restored_vm_from_multi_disk_backup_push_mode,
+    ):
         """
         Test that a VM with multiple disks can be backed up (push mode) and restored with all disks accessible.
 
@@ -236,9 +264,13 @@ class TestMultipleDiskBackup:
         Expected:
             - Restored VM boots successfully and test data from both disks is present
         """
+        assert_restored_vm_has_boot_and_data_disk_test_data(vm=restored_vm_from_multi_disk_backup_push_mode)
 
     @pytest.mark.polarion("CNV-16004")
-    def test_backup_multiple_disks_pull_mode_restore(self):
+    def test_backup_multiple_disks_pull_mode_restore(
+        self,
+        restored_vm_from_multi_disk_backup_pull_mode,
+    ):
         """
         Test that a VM with multiple disks can be backed up (pull mode) and restored with all disks accessible.
 
@@ -256,8 +288,10 @@ class TestMultipleDiskBackup:
         Expected:
             - Restored VM boots successfully and test data from both disks is present
         """
+        assert_restored_vm_has_boot_and_data_disk_test_data(vm=restored_vm_from_multi_disk_backup_pull_mode)
 
 
+@pytest.mark.special_infra
 @pytest.mark.rwx_default_storage
 class TestBackupAfterLiveMigration:
     """
@@ -271,10 +305,11 @@ class TestBackupAfterLiveMigration:
         - Full backup completed before migration
     """
 
-    __test__ = False  # STD placeholder - not yet implemented
-
     @pytest.mark.polarion("CNV-16005")
-    def test_incremental_backup_after_live_migration_push_mode(self):
+    def test_incremental_backup_after_live_migration_push_mode(
+        self,
+        restored_vm_after_migration_incremental_push,
+    ):
         """
         Test that a VM can be backed up (push mode) after live migration and restored with post-migration data.
 
@@ -294,9 +329,13 @@ class TestBackupAfterLiveMigration:
         Expected:
             - Restored VM boots successfully and pre-migration and post-migration test data are present
         """
+        assert_restored_vm_has_boot_and_post_migration_test_data(vm=restored_vm_after_migration_incremental_push)
 
     @pytest.mark.polarion("CNV-16006")
-    def test_incremental_backup_after_live_migration_pull_mode(self):
+    def test_incremental_backup_after_live_migration_pull_mode(
+        self,
+        restored_vm_after_migration_incremental_pull,
+    ):
         """
         Test that a VM can be backed up (pull mode) after live migration and restored with post-migration data.
 
@@ -316,9 +355,15 @@ class TestBackupAfterLiveMigration:
         Expected:
             - Restored VM boots successfully and pre-migration and post-migration test data are present
         """
+        assert_restored_vm_has_boot_and_post_migration_test_data(vm=restored_vm_after_migration_incremental_pull)
 
 
 @pytest.mark.usefixtures("declarative_hotplug_volumes_feature_gate_enabled")
+@pytest.mark.parametrize(
+    "vm_with_cbt_label",
+    [{"name": "cbt-hotplug"}],
+    indirect=True,
+)
 class TestHotplugBackup:
     """
     Backup and restore validation for VMs with hotplugged disks.
@@ -329,10 +374,11 @@ class TestHotplugBackup:
         - Test data written to VM
     """
 
-    __test__ = False  # STD placeholder - not yet implemented
-
     @pytest.mark.polarion("CNV-16009")
-    def test_backup_with_hotplugged_disk_push_mode_restore(self):
+    def test_backup_with_hotplugged_disk_push_mode_restore(
+        self,
+        restored_vm_hotplug_push,
+    ):
         """
         Test that a VM with hotplugged disk can be backed up (push mode) and restored with hotplugged disk data accessible.
 
@@ -353,9 +399,13 @@ class TestHotplugBackup:
         Expected:
             - Restored VM boots successfully and test data from both original and hotplugged disks is present
         """
+        assert_restored_vm_has_boot_and_hotplug_disk_test_data(vm=restored_vm_hotplug_push)
 
     @pytest.mark.polarion("CNV-16010")
-    def test_backup_with_hotplugged_disk_pull_mode_restore(self):
+    def test_backup_with_hotplugged_disk_pull_mode_restore(
+        self,
+        restored_vm_hotplug_pull,
+    ):
         """
         Test that a VM with hotplugged disk can be backed up (pull mode) and restored with hotplugged disk data accessible.
 
@@ -376,8 +426,14 @@ class TestHotplugBackup:
         Expected:
             - Restored VM boots successfully and test data from both original and hotplugged disks is present
         """
+        assert_restored_vm_has_boot_and_hotplug_disk_test_data(vm=restored_vm_hotplug_pull)
 
 
+@pytest.mark.parametrize(
+    "vm_with_cbt_label",
+    [{"name": "cbt-err"}],
+    indirect=True,
+)
 class TestBackupErrorHandling:
     """
     Backup error handling and negative scenarios.
@@ -387,10 +443,12 @@ class TestBackupErrorHandling:
         - Test data written to VM
     """
 
-    __test__ = False  # STD placeholder - not yet implemented
-
     @pytest.mark.polarion("CNV-16023")
-    def test_backup_fails_when_storage_full_push_mode(self):
+    @pytest.mark.usefixtures("failed_full_backup_push_mode")
+    def test_backup_fails_when_storage_full_push_mode(
+        self,
+        vm_with_cbt_label,
+    ):
         """
         [NEGATIVE] Test that backup fails gracefully when backup PVC is full.
 
@@ -406,9 +464,14 @@ class TestBackupErrorHandling:
         Expected:
             - Backup fails with storage full error, leaves no partial backup data on the target PVC, and the VM remains accessible and unaffected
         """
+        assert_vm_has_boot_test_data(vm=vm_with_cbt_label)
 
     @pytest.mark.polarion("CNV-16024")
-    def test_backup_fails_when_storage_full_pull_mode(self):
+    @pytest.mark.usefixtures("failed_full_backup_pull_mode")
+    def test_backup_fails_when_storage_full_pull_mode(
+        self,
+        vm_with_cbt_label,
+    ):
         """
         [NEGATIVE] Test that backup fails gracefully when scratch PVC is full in pull mode.
 
@@ -424,6 +487,7 @@ class TestBackupErrorHandling:
         Expected:
             - Backup fails with storage full error, leaves no partial backup data on the scratch PVC, and the VM remains accessible and unaffected
         """
+        assert_vm_has_boot_test_data(vm=vm_with_cbt_label)
 
 
 class TestConcurrentBackups:
@@ -435,10 +499,11 @@ class TestConcurrentBackups:
         - Test data written to each VM
     """
 
-    __test__ = False  # STD placeholder - not yet implemented
-
     @pytest.mark.polarion("CNV-16011")
-    def test_concurrent_backups_push_mode_restore(self):
+    def test_concurrent_backups_push_mode_restore(
+        self,
+        five_restored_vms_push_mode,
+    ):
         """
         Test that concurrent backups (push mode) on multiple VMs complete successfully and all VMs can be restored.
 
@@ -456,9 +521,14 @@ class TestConcurrentBackups:
         Expected:
             - All restored VMs boot successfully and test data is present in each VM
         """
+        for restored_vm in five_restored_vms_push_mode:
+            assert_restored_vm_has_boot_test_data(vm=restored_vm)
 
     @pytest.mark.polarion("CNV-16012")
-    def test_concurrent_backups_pull_mode_restore(self):
+    def test_concurrent_backups_pull_mode_restore(
+        self,
+        five_restored_vms_pull_mode,
+    ):
         """
         Test that concurrent backups (pull mode) on multiple VMs complete successfully and all VMs can be restored.
 
@@ -476,6 +546,8 @@ class TestConcurrentBackups:
         Expected:
             - All restored VMs boot successfully and test data is present in each VM
         """
+        for restored_vm in five_restored_vms_pull_mode:
+            assert_restored_vm_has_boot_test_data(vm=restored_vm)
 
 
 @pytest.mark.tier3
@@ -488,10 +560,11 @@ class TestWindowsVMFullBackup:
         - Test data written to Windows VM
     """
 
-    __test__ = False  # STD placeholder - not yet implemented
-
     @pytest.mark.polarion("CNV-16013")
-    def test_windows_vm_full_backup_push_mode_restore(self):
+    def test_windows_vm_full_backup_push_mode_restore(
+        self,
+        restored_vm_from_full_backup_windows_push_mode,
+    ):
         """
         Test that a Windows VM can be backed up (push mode) and restored from a full backup.
 
@@ -509,9 +582,13 @@ class TestWindowsVMFullBackup:
         Expected:
             - Restored Windows VM boots successfully and test data is present
         """
+        assert_restored_windows_vm_has_test_data(vm=restored_vm_from_full_backup_windows_push_mode)
 
     @pytest.mark.polarion("CNV-16014")
-    def test_windows_vm_full_backup_pull_mode_restore(self):
+    def test_windows_vm_full_backup_pull_mode_restore(
+        self,
+        restored_vm_from_full_backup_windows_pull_mode,
+    ):
         """
         Test that a Windows VM can be backed up (pull mode) and restored from a full backup.
 
@@ -529,6 +606,7 @@ class TestWindowsVMFullBackup:
         Expected:
             - Restored Windows VM boots successfully and test data is present
         """
+        assert_restored_windows_vm_has_test_data(vm=restored_vm_from_full_backup_windows_pull_mode)
 
 
 @pytest.mark.tier3
@@ -542,10 +620,11 @@ class TestWindowsVMIncrementalBackup:
         - Test data written to Windows VM
     """
 
-    __test__ = False  # STD placeholder - not yet implemented
-
     @pytest.mark.polarion("CNV-16015")
-    def test_windows_vm_incremental_backup_push_mode_restore(self):
+    def test_windows_vm_incremental_backup_push_mode_restore(
+        self,
+        restored_vm_from_incremental_backup_windows_push_mode,
+    ):
         """
         Test that a Windows VM can be backed up (push mode) and restored from an incremental backup.
 
@@ -563,9 +642,15 @@ class TestWindowsVMIncrementalBackup:
         Expected:
             - Restored Windows VM boots successfully and all test data is present
         """
+        assert_restored_windows_vm_has_boot_and_incremental_test_data(
+            vm=restored_vm_from_incremental_backup_windows_push_mode,
+        )
 
     @pytest.mark.polarion("CNV-16016")
-    def test_windows_vm_incremental_backup_pull_mode_restore(self):
+    def test_windows_vm_incremental_backup_pull_mode_restore(
+        self,
+        restored_vm_from_incremental_backup_windows_pull_mode,
+    ):
         """
         Test that a Windows VM can be backed up (pull mode) and restored from an incremental backup.
 
@@ -583,3 +668,6 @@ class TestWindowsVMIncrementalBackup:
         Expected:
             - Restored Windows VM boots successfully and all test data is present
         """
+        assert_restored_windows_vm_has_boot_and_incremental_test_data(
+            vm=restored_vm_from_incremental_backup_windows_pull_mode,
+        )
