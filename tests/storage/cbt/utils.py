@@ -21,8 +21,8 @@ LOGGER = logging.getLogger(__name__)
 
 CBT_TEST_DATA: str = "cbt-backup-test-data-content"
 CBT_INCREMENTAL_TEST_DATA: str = "cbt-incremental-backup-test-data"
-CBT_BOOT_DISK_TEST_DATA_FILE = "/tmp/cbt-test-data.txt"
-CBT_INCREMENTAL_TEST_DATA_FILE = "/tmp/cbt-incremental-test-data.txt"
+CBT_BOOT_DISK_TEST_DATA_FILE: str = "/tmp/cbt-test-data.txt"
+CBT_INCREMENTAL_TEST_DATA_FILE: str = "/tmp/cbt-incremental-test-data.txt"
 CBT_ENABLED_LABEL: dict[str, str] = {"changedBlockTracking": "true"}
 
 
@@ -40,15 +40,16 @@ def cbt_resource_id(name: str) -> str:
 def assert_backup_includes_volumes(
     *,
     backup: VirtualMachineBackup,
-    expected_volume_count: int,
+    expected_volume_names: list[str],
     expected_backup_type: str | None = None,
 ) -> None:
     """Assert a ready backup includes the expected volumes (and optional type)."""
     backup_status = backup.instance.status
     included_volumes = backup_status["includedVolumes"]
-    assert len(included_volumes) == expected_volume_count, (
-        f"Backup {backup.name} included {len(included_volumes)} volumes, "
-        f"expected {expected_volume_count}: {included_volumes}"
+    actual_volume_names = [volume["volumeName"] for volume in included_volumes]
+    assert sorted(actual_volume_names) == sorted(expected_volume_names), (
+        f"Backup {backup.name} included volumes {actual_volume_names}, "
+        f"expected {expected_volume_names}: {included_volumes}"
     )
     if expected_backup_type is not None:
         assert backup_status["type"] == expected_backup_type, (
@@ -66,6 +67,19 @@ def wait_for_vm_cbt_enabled(vm: VirtualMachine) -> None:
     ):
         if cbt_state == "Enabled":
             return
+
+
+def wait_for_pull_backup_export_ready(backup: VirtualMachineBackup) -> None:
+    """Wait until a pull-mode backup export is ready for collection."""
+    # Pull readiness is Progressing=True with reason ExportReady (there is no ExportReady condition type).
+    LOGGER.info(f"Waiting for pull-mode backup {backup.name} export to become ready")
+    backup.wait_for_condition(
+        condition="Progressing",
+        status=backup.Condition.Status.TRUE,
+        reason="ExportReady",
+        timeout=TIMEOUT_10MIN,
+        sleep_time=TIMEOUT_5SEC,
+    )
 
 
 def wait_for_pull_backup_export_deleted(*, name: str, namespace: str, client: DynamicClient) -> None:

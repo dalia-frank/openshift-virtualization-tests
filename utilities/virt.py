@@ -717,7 +717,8 @@ class VirtualMachineForTests(VirtualMachine):
         if self.body:
             if self.body.get("metadata"):
                 # We must set name in Template, since we use a unique name here we override it.
-                self.res["metadata"] = self.body["metadata"]
+                # deepcopy so label/annotation merges do not mutate the caller-owned body.
+                self.res["metadata"] = deepcopy(self.body["metadata"])
                 self.res["metadata"]["name"] = self.name
 
             self.res["spec"] = self.body["spec"]

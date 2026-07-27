@@ -21,11 +21,11 @@ from tests.storage.cbt.utils import (
     cbt_pvc_size_with_headroom,
     cbt_resource_id,
     wait_for_pull_backup_export_deleted,
+    wait_for_pull_backup_export_ready,
     wait_for_vm_cbt_enabled,
 )
 from utilities.constants.images import OS_FLAVOR_RHEL
 from utilities.constants.instance_types import RHEL9_PREFERENCE, U1_SMALL
-from utilities.constants.timeouts import TIMEOUT_5SEC, TIMEOUT_10MIN
 from utilities.hco import ResourceEditorValidateHCOReconcile
 from utilities.storage import (
     data_volume_template_with_source_ref_dict,
@@ -210,14 +210,7 @@ def ready_full_backup_pull_mode(
         force_full_backup=True,
         source=backup_tracker_source,
     ) as backup:
-        # Pull readiness is Progressing=True with reason ExportReady (there is no ExportReady condition type).
-        backup.wait_for_condition(
-            condition="Progressing",
-            status=VirtualMachineBackup.Condition.Status.TRUE,
-            reason="ExportReady",
-            timeout=TIMEOUT_10MIN,
-            sleep_time=TIMEOUT_5SEC,
-        )
+        wait_for_pull_backup_export_ready(backup=backup)
         yield backup
 
 
@@ -263,12 +256,5 @@ def ready_incremental_backup_pull_mode(
         force_full_backup=False,
         source=backup_tracker_source,
     ) as backup:
-        # Pull readiness is Progressing=True with reason ExportReady (there is no ExportReady condition type).
-        backup.wait_for_condition(
-            condition="Progressing",
-            status=VirtualMachineBackup.Condition.Status.TRUE,
-            reason="ExportReady",
-            timeout=TIMEOUT_10MIN,
-            sleep_time=TIMEOUT_5SEC,
-        )
+        wait_for_pull_backup_export_ready(backup=backup)
         yield backup

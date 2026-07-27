@@ -12,6 +12,7 @@ Preconditions:
 import pytest
 
 from tests.storage.cbt.utils import assert_backup_includes_volumes
+from utilities.constants.virt import DV_DISK
 
 
 @pytest.mark.parametrize(
@@ -71,7 +72,7 @@ class TestFullBackupRestore:
         """
         assert_backup_includes_volumes(
             backup=ready_full_backup_pull_mode,
-            expected_volume_count=1,
+            expected_volume_names=[DV_DISK],
             expected_backup_type="Full",
         )
 
@@ -136,7 +137,7 @@ class TestIncrementalBackupRestore:
         """
         assert_backup_includes_volumes(
             backup=ready_incremental_backup_pull_mode,
-            expected_volume_count=1,
+            expected_volume_names=[DV_DISK],
             expected_backup_type="Incremental",
         )
 
