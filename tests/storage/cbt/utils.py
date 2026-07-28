@@ -19,12 +19,6 @@ if TYPE_CHECKING:
 
 LOGGER = logging.getLogger(__name__)
 
-CBT_TEST_DATA: str = "cbt-backup-test-data-content"
-CBT_INCREMENTAL_TEST_DATA: str = "cbt-incremental-backup-test-data"
-CBT_BOOT_DISK_TEST_DATA_FILE: str = "/tmp/cbt-test-data.txt"
-CBT_INCREMENTAL_TEST_DATA_FILE: str = "/tmp/cbt-incremental-test-data.txt"
-CBT_ENABLED_LABEL: dict[str, str] = {"changedBlockTracking": "true"}
-
 
 def cbt_pvc_size_with_headroom(source_disk_size: str, headroom_gib: int = 10) -> str:
     """Return a PVC size with headroom above the source disk capacity."""

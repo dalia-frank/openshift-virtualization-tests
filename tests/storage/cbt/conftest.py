@@ -12,12 +12,14 @@ from ocp_resources.virtual_machine_backup_tracker import VirtualMachineBackupTra
 from ocp_resources.virtual_machine_cluster_instancetype import VirtualMachineClusterInstancetype
 from ocp_resources.virtual_machine_cluster_preference import VirtualMachineClusterPreference
 
-from tests.storage.cbt.utils import (
+from tests.storage.cbt.constants import (
     CBT_BOOT_DISK_TEST_DATA_FILE,
     CBT_ENABLED_LABEL,
     CBT_INCREMENTAL_TEST_DATA,
     CBT_INCREMENTAL_TEST_DATA_FILE,
     CBT_TEST_DATA,
+)
+from tests.storage.cbt.utils import (
     cbt_pvc_size_with_headroom,
     cbt_resource_id,
     wait_for_pull_backup_export_deleted,
