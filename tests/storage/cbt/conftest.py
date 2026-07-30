@@ -21,7 +21,6 @@ from tests.storage.cbt.constants import (
 )
 from tests.storage.cbt.utils import (
     cbt_pvc_size_with_headroom,
-    cbt_resource_id,
     wait_for_pull_backup_export_deleted,
     wait_for_pull_backup_export_ready,
     wait_for_vm_cbt_enabled,
@@ -74,6 +73,7 @@ def vm_with_cbt_label(
     cbt_hco_configured,
     storage_class_name_scope_module,
     rhel9_data_source_scope_session,
+    unique_suffix,
 ):
     """
     VM with CBT enabled, started, and test data written.
@@ -82,7 +82,7 @@ def vm_with_cbt_label(
         VirtualMachine: Running VM with CBT enabled and test data written
     """
     with VirtualMachineForTests(
-        name=f"{request.param['name']}-{cbt_resource_id(name=storage_class_name_scope_module)}",
+        name=f"{request.param['name']}-{unique_suffix}",
         namespace=namespace.name,
         client=unprivileged_client,
         vm_instance_type=VirtualMachineClusterInstancetype(client=unprivileged_client, name=U1_SMALL),
@@ -146,6 +146,7 @@ def pull_backup_staging_pvc(
     namespace,
     vm_with_cbt_label,
     storage_class_name_scope_module,
+    unique_suffix,
 ):
     """
     Controller-side staging PVC for pull-mode backup export.
@@ -155,7 +156,7 @@ def pull_backup_staging_pvc(
     """
     boot_disk_size = vm_with_cbt_label.data_volume_template["spec"]["storage"]["resources"]["requests"]["storage"]
     with PersistentVolumeClaim(
-        name=f"cbt-staging-{cbt_resource_id(name=storage_class_name_scope_module)}",
+        name=f"cbt-staging-{unique_suffix}",
         namespace=namespace.name,
         client=unprivileged_client,
         accessmodes=PersistentVolumeClaim.AccessMode.RWO,
@@ -170,7 +171,7 @@ def pull_backup_staging_pvc(
 def pull_mode_token_secret(
     unprivileged_client,
     namespace,
-    storage_class_name_scope_module,
+    unique_suffix,
 ):
     """
     User-provided export token secret for pull-mode backup authentication.
@@ -179,7 +180,7 @@ def pull_mode_token_secret(
         Secret: Pull-mode token secret
     """
     with Secret(
-        name=f"cbt-pull-token-{cbt_resource_id(name=storage_class_name_scope_module)}",
+        name=f"cbt-pull-token-{unique_suffix}",
         namespace=namespace.name,
         client=unprivileged_client,
         string_data={"token": secrets.token_urlsafe(nbytes=16)},
@@ -194,7 +195,7 @@ def ready_full_backup_pull_mode(
     pull_backup_staging_pvc,
     pull_mode_token_secret,
     backup_tracker_source,
-    storage_class_name_scope_module,
+    unique_suffix,
 ):
     """
     Full pull-mode backup after export is ready (no collect).
@@ -204,7 +205,7 @@ def ready_full_backup_pull_mode(
     """
     with VirtualMachineBackup(
         mode=VirtualMachineBackup.Mode.PULL,
-        name=f"full-pull-{cbt_resource_id(name=storage_class_name_scope_module)}",
+        name=f"full-pull-{unique_suffix}",
         namespace=namespace.name,
         client=unprivileged_client,
         token_secret_ref=pull_mode_token_secret.name,
@@ -225,7 +226,7 @@ def ready_incremental_backup_pull_mode(
     vm_with_cbt_label,
     ready_full_backup_pull_mode,
     backup_tracker_source,
-    storage_class_name_scope_module,
+    unique_suffix,
 ):
     """
     Incremental pull-mode backup after export is ready (no collect).
@@ -250,7 +251,7 @@ def ready_incremental_backup_pull_mode(
     )
     with VirtualMachineBackup(
         mode=VirtualMachineBackup.Mode.PULL,
-        name=f"incr-pull-{cbt_resource_id(name=storage_class_name_scope_module)}",
+        name=f"incr-pull-{unique_suffix}",
         namespace=namespace.name,
         client=unprivileged_client,
         token_secret_ref=pull_mode_token_secret.name,

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import logging
 from typing import TYPE_CHECKING
 
@@ -26,13 +25,7 @@ def cbt_pvc_size_with_headroom(source_disk_size: str, headroom_gib: int = 10) ->
     return f"{source_gib + headroom_gib}Gi"
 
 
-def cbt_resource_id(name: str) -> str:
-    """Return a short stable identifier for CBT resource names."""
-    return hashlib.sha256(name.encode()).hexdigest()[:10]
-
-
 def assert_backup_includes_volumes(
-    *,
     backup: VirtualMachineBackup,
     expected_volume_names: list[str],
     expected_backup_type: str | None = None,
@@ -76,14 +69,8 @@ def wait_for_pull_backup_export_ready(backup: VirtualMachineBackup) -> None:
     )
 
 
-def wait_for_pull_backup_export_deleted(*, name: str, namespace: str, client: DynamicClient) -> None:
+def wait_for_pull_backup_export_deleted(name: str, namespace: str, client: DynamicClient) -> None:
     """Wait until the VirtualMachineExport owned by a pull-mode backup is gone."""
     export = VirtualMachineExport(name=name, namespace=namespace, client=client)
     LOGGER.info(f"Waiting for VirtualMachineExport {namespace}/{name} to be deleted")
-    for export_deleted in TimeoutSampler(
-        wait_timeout=TIMEOUT_10MIN,
-        sleep=TIMEOUT_5SEC,
-        func=lambda: not export.exists,
-    ):
-        if export_deleted:
-            return
+    export.wait_deleted(timeout=TIMEOUT_10MIN)
