@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from math import ceil
 from typing import TYPE_CHECKING
 
 from kubernetes.utils.quantity import parse_quantity
@@ -20,8 +21,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 def cbt_pvc_size_with_headroom(source_disk_size: str, headroom_gib: int = 10) -> str:
-    """Return a PVC size with headroom above the source disk capacity."""
-    source_gib = parse_quantity(source_disk_size) // (1024**3)
+    """Return a PVC size in Gi with headroom above the source disk capacity."""
+    source_gib = ceil(parse_quantity(source_disk_size) / (1024**3))
     return f"{source_gib + headroom_gib}Gi"
 
 
