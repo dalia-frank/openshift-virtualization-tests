@@ -59,6 +59,17 @@ def wait_for_vm_cbt_enabled(vm: VirtualMachine) -> None:
             return
 
 
+def wait_for_push_backup_complete(backup: VirtualMachineBackup) -> None:
+    """Wait until a push-mode backup completes successfully."""
+    LOGGER.info(f"Waiting for push-mode backup {backup.name} to complete")
+    backup.wait_for_condition(
+        condition="Complete",
+        status=backup.Condition.Status.TRUE,
+        timeout=TIMEOUT_10MIN,
+        sleep_time=TIMEOUT_5SEC,
+    )
+
+
 def wait_for_pull_backup_export_ready(backup: VirtualMachineBackup) -> None:
     """Wait until a pull-mode backup export is ready for collection."""
     # Pull readiness is Progressing=True with reason ExportReady (there is no ExportReady condition type).
