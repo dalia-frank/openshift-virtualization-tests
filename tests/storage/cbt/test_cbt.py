@@ -11,6 +11,7 @@ Preconditions:
 
 import pytest
 
+from tests.storage.cbt.constants import CBT_BACKUP_TYPE_FULL, CBT_BACKUP_TYPE_INCREMENTAL
 from tests.storage.cbt.utils import assert_backup_includes_volumes
 from utilities.constants.virt import DV_DISK
 
@@ -51,7 +52,7 @@ class TestFullBackupRestore:
         assert_backup_includes_volumes(
             backup=completed_full_backup_push_mode,
             expected_volume_names=[DV_DISK],
-            expected_backup_type="Full",
+            expected_backup_type=CBT_BACKUP_TYPE_FULL,
         )
 
     @pytest.mark.polarion("CNV-15996")
@@ -76,7 +77,7 @@ class TestFullBackupRestore:
         assert_backup_includes_volumes(
             backup=ready_full_backup_pull_mode,
             expected_volume_names=[DV_DISK],
-            expected_backup_type="Full",
+            expected_backup_type=CBT_BACKUP_TYPE_FULL,
         )
 
 
@@ -118,7 +119,7 @@ class TestIncrementalBackupRestore:
         assert_backup_includes_volumes(
             backup=completed_incremental_backup_push_mode,
             expected_volume_names=[DV_DISK],
-            expected_backup_type="Incremental",
+            expected_backup_type=CBT_BACKUP_TYPE_INCREMENTAL,
         )
 
     @pytest.mark.polarion("CNV-16000")
@@ -145,7 +146,7 @@ class TestIncrementalBackupRestore:
         assert_backup_includes_volumes(
             backup=ready_incremental_backup_pull_mode,
             expected_volume_names=[DV_DISK],
-            expected_backup_type="Incremental",
+            expected_backup_type=CBT_BACKUP_TYPE_INCREMENTAL,
         )
 
 
