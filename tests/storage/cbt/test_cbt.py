@@ -21,7 +21,7 @@ from utilities.constants.virt import DV_DISK
     [{"name": "cbt-full"}],
     indirect=True,
 )
-class TestFullBackupRestore:
+class TestFullBackup:
     """
     Full backup validation for push and pull modes (backup success only).
 
@@ -47,7 +47,7 @@ class TestFullBackupRestore:
             3. Wait for the backup to complete
 
         Expected:
-            - Backup completes and includes the boot disk
+            - Full backup completes and includes the boot disk
         """
         assert_backup_includes_volumes(
             backup=completed_full_backup_push_mode,
@@ -86,7 +86,7 @@ class TestFullBackupRestore:
     [{"name": "cbt-incr"}],
     indirect=True,
 )
-class TestIncrementalBackupRestore:
+class TestIncrementalBackup:
     """
     Incremental backup validation for push and pull modes (backup success only).
 
