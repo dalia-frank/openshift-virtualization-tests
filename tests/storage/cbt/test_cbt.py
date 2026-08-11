@@ -105,7 +105,9 @@ class TestIncrementalBackup:
         Test that an incremental backup in push mode completes successfully.
 
         Preconditions:
+        Preconditions:
             - Backup PVC available
+            - Full backup completed in push mode
 
         Steps:
             1. Perform a full backup in push mode and wait until it completes
