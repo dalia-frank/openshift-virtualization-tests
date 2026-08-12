@@ -105,15 +105,13 @@ class TestIncrementalBackup:
         Test that an incremental backup in push mode completes successfully.
 
         Preconditions:
-        Preconditions:
             - Backup PVC available
             - Full backup completed in push mode
 
         Steps:
-            1. Perform a full backup in push mode and wait until it completes
-            2. Write new test data to VM
-            3. Perform an incremental backup in push mode
-            4. Wait for the backup to complete
+            1. Write new test data to VM
+            2. Perform an incremental backup in push mode
+            3. Wait for the backup to complete
 
         Expected:
             - Incremental backup completes and includes the boot disk

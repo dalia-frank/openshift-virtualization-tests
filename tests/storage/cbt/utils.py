@@ -9,6 +9,7 @@ from kubernetes.utils.quantity import parse_quantity
 from ocp_resources.virtual_machine_export import VirtualMachineExport
 from timeout_sampler import TimeoutSampler
 
+from tests.storage.cbt.constants import CBT_BACKUP_CONDITION_FAILED
 from utilities.constants.timeouts import TIMEOUT_5SEC, TIMEOUT_10MIN
 
 if TYPE_CHECKING:
@@ -74,6 +75,9 @@ def wait_for_push_backup_complete(backup: VirtualMachineBackup) -> None:
 
     Side effects:
         Polls the OpenShift API until the backup reports Complete=True.
+
+    Raises:
+        ConditionError: If the backup reports Failed=True before completing.
     """
     LOGGER.info(f"Waiting for push-mode backup {backup.name} to complete")
     backup.wait_for_condition(
@@ -81,6 +85,8 @@ def wait_for_push_backup_complete(backup: VirtualMachineBackup) -> None:
         status=backup.Condition.Status.TRUE,
         timeout=TIMEOUT_10MIN,
         sleep_time=TIMEOUT_5SEC,
+        stop_condition=CBT_BACKUP_CONDITION_FAILED,
+        stop_status=backup.Condition.Status.TRUE,
     )
 
 
@@ -93,6 +99,9 @@ def wait_for_pull_backup_export_ready(backup: VirtualMachineBackup) -> None:
     Side effects:
         Polls the OpenShift API until the backup reports Progressing=True with reason
         ExportReady (there is no ExportReady condition type).
+
+    Raises:
+        ConditionError: If the backup reports Failed=True before the export becomes ready.
     """
     LOGGER.info(f"Waiting for pull-mode backup {backup.name} export to become ready")
     backup.wait_for_condition(
@@ -101,6 +110,8 @@ def wait_for_pull_backup_export_ready(backup: VirtualMachineBackup) -> None:
         reason="ExportReady",
         timeout=TIMEOUT_10MIN,
         sleep_time=TIMEOUT_5SEC,
+        stop_condition=CBT_BACKUP_CONDITION_FAILED,
+        stop_status=backup.Condition.Status.TRUE,
     )
 
 
