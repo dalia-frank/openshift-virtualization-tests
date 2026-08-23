@@ -65,7 +65,7 @@ class TestFullBackup:
         full_backup = completed_push_backup_chain[0]
         assert_backup_status_includes_volumes(
             backup_name=full_backup.name,
-            backup_status=full_backup.instance.status,
+            backup_status=full_backup.instance.to_dict()["status"],
             expected_volume_names=[DV_DISK],
             expected_backup_type=CBT_BACKUP_TYPE_FULL,
         )
@@ -146,7 +146,7 @@ class TestIncrementalBackup:
         incremental_backup = completed_push_backup_chain[-1]
         assert_backup_status_includes_volumes(
             backup_name=incremental_backup.name,
-            backup_status=incremental_backup.instance.status,
+            backup_status=incremental_backup.instance.to_dict()["status"],
             expected_volume_names=[DV_DISK],
             expected_backup_type=CBT_BACKUP_TYPE_INCREMENTAL,
         )
@@ -236,7 +236,7 @@ class TestMultipleIncrementalBackups:
             expected_backup_type = CBT_BACKUP_TYPE_FULL if backup_index == 0 else CBT_BACKUP_TYPE_INCREMENTAL
             assert_backup_status_includes_volumes(
                 backup_name=backup.name,
-                backup_status=backup.instance.status,
+                backup_status=backup.instance.to_dict()["status"],
                 expected_volume_names=[DV_DISK],
                 expected_backup_type=expected_backup_type,
             )
@@ -330,7 +330,7 @@ class TestMultipleDiskBackup:
         full_backup = completed_push_backup_chain[0]
         assert_backup_status_includes_volumes(
             backup_name=full_backup.name,
-            backup_status=full_backup.instance.status,
+            backup_status=full_backup.instance.to_dict()["status"],
             expected_volume_names=[DV_DISK, *data_disk_names],
             expected_backup_type=CBT_BACKUP_TYPE_FULL,
         )

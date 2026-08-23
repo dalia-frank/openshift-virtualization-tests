@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from kubernetes.utils.quantity import parse_quantity
 from ocp_resources.virtual_machine_export import VirtualMachineExport
-from timeout_sampler import TimeoutExpiredError, TimeoutSampler
+from timeout_sampler import TimeoutSampler
 
 from tests.storage.cbt.constants import CBT_BACKUP_CONDITION_FAILED
 from utilities.constants.timeouts import TIMEOUT_5SEC, TIMEOUT_10MIN
@@ -55,15 +55,19 @@ def data_disk_name(index: int, unique_suffix: str) -> str:
 
 
 def guest_volume_target(vm: VirtualMachine, volume_name: str) -> str | None:
-    """Guest device name (for example ``vdc``) for a volume, from VMI volumeStatus."""
-    for volume_status in vm.vmi.instance.status.volumeStatus:
+    """Guest device name (for example ``vdc``) for a volume, from VMI volumeStatus.
+
+    ``volumeStatus`` is absent from the VMI status until the volumes report in, so a missing
+    value is treated as no volumes found yet, rather than an error, to keep polling.
+    """
+    for volume_status in vm.vmi.instance.status.volumeStatus or []:
         if volume_status.get("name") == volume_name:
             return volume_status.get("target")
     return None
 
 
-def guest_device_path_for_volume(vm: VirtualMachine, volume_name: str) -> str:
-    """Guest ``/dev`` path for a named volume, taken from VMI ``volumeStatus.target``.
+def _wait_for_guest_volume_target(vm: VirtualMachine, volume_name: str) -> None:
+    """Wait until the volume reports a guest device name.
 
     Side effects:
         Polls the VMI until the volume reports a guest device name.
@@ -80,8 +84,20 @@ def guest_device_path_for_volume(vm: VirtualMachine, volume_name: str) -> str:
         volume_name=volume_name,
     ):
         if target:
-            return f"/dev/{target}"
-    raise TimeoutExpiredError(f"Volume {volume_name} on VM {vm.name} never reported a guest device name")
+            return
+
+
+def guest_device_path_for_volume(vm: VirtualMachine, volume_name: str) -> str:
+    """Guest ``/dev`` path for a named volume, taken from VMI ``volumeStatus.target``.
+
+    Side effects:
+        Polls the VMI until the volume reports a guest device name.
+
+    Raises:
+        TimeoutExpiredError: If the volume never reports a guest device name within the timeout.
+    """
+    _wait_for_guest_volume_target(vm=vm, volume_name=volume_name)
+    return f"/dev/{guest_volume_target(vm=vm, volume_name=volume_name)}"
 
 
 def attached_data_disk_names(vm: VirtualMachine) -> list[str]:
