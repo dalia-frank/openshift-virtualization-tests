@@ -59,6 +59,13 @@ def guest_volume_target(vm: VirtualMachine, volume_name: str) -> str | None:
 
     ``volumeStatus`` is absent from the VMI status until the volumes report in, so a missing
     value is treated as no volumes found yet, rather than an error, to keep polling.
+
+    Args:
+        vm: Running VM to inspect.
+        volume_name: VM volume name to resolve.
+
+    Returns:
+        str | None: The guest device target, or ``None`` if the volume has no target yet.
     """
     for volume_status in vm.vmi.instance.status.volumeStatus or []:
         if volume_status.get("name") == volume_name:
@@ -68,6 +75,10 @@ def guest_volume_target(vm: VirtualMachine, volume_name: str) -> str | None:
 
 def _wait_for_guest_volume_target(vm: VirtualMachine, volume_name: str) -> None:
     """Wait until the volume reports a guest device name.
+
+    Args:
+        vm: Running VM to inspect.
+        volume_name: VM volume name to wait for.
 
     Side effects:
         Polls the VMI until the volume reports a guest device name.
@@ -89,6 +100,13 @@ def _wait_for_guest_volume_target(vm: VirtualMachine, volume_name: str) -> None:
 
 def guest_device_path_for_volume(vm: VirtualMachine, volume_name: str) -> str:
     """Guest ``/dev`` path for a named volume, taken from VMI ``volumeStatus.target``.
+
+    Args:
+        vm: Running VM to inspect.
+        volume_name: VM volume name to resolve.
+
+    Returns:
+        str: The guest ``/dev`` path for the volume (for example ``/dev/vdc``).
 
     Side effects:
         Polls the VMI until the volume reports a guest device name.
