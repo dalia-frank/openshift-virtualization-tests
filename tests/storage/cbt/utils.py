@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from kubernetes.utils.quantity import parse_quantity
 from ocp_resources.datavolume import DataVolume
+from ocp_resources.virtual_machine_backup import VirtualMachineBackup
 from ocp_resources.virtual_machine_export import VirtualMachineExport
 from timeout_sampler import TimeoutSampler
 
@@ -19,7 +20,6 @@ from utilities.virt import VirtualMachineForTests
 if TYPE_CHECKING:
     from kubernetes.dynamic import DynamicClient
     from ocp_resources.virtual_machine import VirtualMachine
-    from ocp_resources.virtual_machine_backup import VirtualMachineBackup
 
 LOGGER = logging.getLogger(__name__)
 
@@ -313,3 +313,41 @@ def wait_for_pull_backup_export_deleted(name: str, namespace: str, client: Dynam
     export = VirtualMachineExport(name=name, namespace=namespace, client=client)
     LOGGER.info(f"Waiting for VirtualMachineExport {namespace}/{name} to be deleted")
     export.wait_deleted(timeout=TIMEOUT_10MIN)
+
+
+def deploy_cbt_pull_backup(
+    name: str,
+    namespace: str,
+    client: DynamicClient,
+    token_secret_name: str,
+    pvc_name: str,
+    source: dict[str, str],
+    *,
+    force_full_backup: bool,
+) -> VirtualMachineBackup:
+    """Create and deploy a pull-mode VirtualMachineBackup.
+
+    Args:
+        name: Backup resource name.
+        namespace: Namespace for the backup.
+        client: Client used to create the backup.
+        token_secret_name: Name of the pull-mode token secret.
+        pvc_name: Staging PVC name.
+        source: Backup tracker source reference.
+        force_full_backup: Whether this backup is a full backup.
+
+    Returns:
+        VirtualMachineBackup: Deployed pull-mode backup (not yet waited for export ready).
+    """
+    backup = VirtualMachineBackup(
+        mode=VirtualMachineBackup.Mode.PULL,
+        name=name,
+        namespace=namespace,
+        client=client,
+        token_secret_ref=token_secret_name,
+        pvc_name=pvc_name,
+        force_full_backup=force_full_backup,
+        source=source,
+    )
+    backup.deploy()
+    return backup

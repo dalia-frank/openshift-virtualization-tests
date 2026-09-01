@@ -23,6 +23,7 @@ from tests.storage.cbt.utils import (
     CbtVmWithDataDisks,
     cbt_pvc_size_for_vm,
     data_disk_name,
+    deploy_cbt_pull_backup,
     guest_device_path_for_volume,
     incremental_test_data,
     incremental_test_data_file,
@@ -330,22 +331,15 @@ def ready_pull_backup_chain(
     """
     incremental_count = request.param["incremental_count"]
     completed_backups = []
-
-    def _deploy_pull_backup(name: str, force_full_backup: bool) -> VirtualMachineBackup:
-        backup = VirtualMachineBackup(
-            mode=VirtualMachineBackup.Mode.PULL,
-            name=name,
-            namespace=namespace.name,
-            client=unprivileged_client,
-            token_secret_ref=pull_mode_token_secret.name,
-            pvc_name=pull_backup_staging_pvc.name,
-            force_full_backup=force_full_backup,
-            source=backup_tracker_source,
-        )
-        backup.deploy()
-        return backup
-
-    current_backup = _deploy_pull_backup(name=f"full-pull-{unique_suffix}", force_full_backup=True)
+    current_backup = deploy_cbt_pull_backup(
+        name=f"full-pull-{unique_suffix}",
+        namespace=namespace.name,
+        client=unprivileged_client,
+        token_secret_name=pull_mode_token_secret.name,
+        pvc_name=pull_backup_staging_pvc.name,
+        source=backup_tracker_source,
+        force_full_backup=True,
+    )
     try:
         wait_for_pull_backup_export_ready(backup=current_backup)
         completed_backups.append((current_backup.name, current_backup.instance.to_dict()["status"]))
@@ -362,8 +356,13 @@ def ready_pull_backup_chain(
                 filename=incremental_test_data_file(index=incremental_index),
                 content=incremental_test_data(index=incremental_index),
             )
-            current_backup = _deploy_pull_backup(
+            current_backup = deploy_cbt_pull_backup(
                 name=f"incr{incremental_index}-pull-{unique_suffix}",
+                namespace=namespace.name,
+                client=unprivileged_client,
+                token_secret_name=pull_mode_token_secret.name,
+                pvc_name=pull_backup_staging_pvc.name,
+                source=backup_tracker_source,
                 force_full_backup=False,
             )
             wait_for_pull_backup_export_ready(backup=current_backup)
