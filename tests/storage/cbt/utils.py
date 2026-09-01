@@ -6,12 +6,15 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from kubernetes.utils.quantity import parse_quantity
+from ocp_resources.datavolume import DataVolume
 from ocp_resources.virtual_machine_export import VirtualMachineExport
 from timeout_sampler import TimeoutSampler
 
-from tests.storage.cbt.constants import CBT_BACKUP_CONDITION_FAILED
+from tests.storage.cbt.constants import CBT_BACKUP_CONDITION_FAILED, CBT_DATA_DISK_SIZE
 from utilities.constants.timeouts import TIMEOUT_5SEC, TIMEOUT_10MIN
 from utilities.constants.virt import CLOUD_INIT_DISK_NAME, DV_DISK
+from utilities.storage import construct_datavolume_source_dict
+from utilities.virt import VirtualMachineForTests
 
 if TYPE_CHECKING:
     from kubernetes.dynamic import DynamicClient
@@ -52,6 +55,74 @@ def cbt_pvc_size_for_vm(vm: VirtualMachine, headroom_gib: int = 10) -> str:
 def data_disk_name(index: int, unique_suffix: str) -> str:
     """Name of the Nth (1-indexed) additional blank data disk DataVolume/disk/volume for a CBT test VM."""
     return f"cbt-datadisk-{index}-{unique_suffix}"
+
+
+def blank_data_disk_template(name: str, namespace: str, storage_class_name: str) -> dict[str, Any]:
+    """Build a blank DataVolume dict for VM dataVolumeTemplates.
+
+    Args:
+        name: DataVolume name.
+        namespace: Namespace used to construct the DataVolume, then stripped from the dict.
+        storage_class_name: Storage class for the blank PVC.
+
+    Returns:
+        dict[str, Any]: DataVolume resource dict without namespace, for dataVolumeTemplates.
+    """
+    data_volume = DataVolume(
+        name=name,
+        namespace=namespace,
+        source_dict=construct_datavolume_source_dict(source="blank"),
+        size=CBT_DATA_DISK_SIZE,
+        storage_class=storage_class_name,
+        api_name="storage",
+    )
+    data_volume.to_dict()
+    del data_volume.res["metadata"]["namespace"]
+    return data_volume.res
+
+
+class CbtVmWithDataDisks(VirtualMachineForTests):
+    """CBT test VM that injects blank data disks at creation time to avoid post-create PATCH calls."""
+
+    def __init__(
+        self,
+        data_disk_storage_class_name: str,
+        data_disk_count: int,
+        unique_suffix: str,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.data_disk_storage_class_name = data_disk_storage_class_name
+        self.data_disk_count = data_disk_count
+        self.unique_suffix = unique_suffix
+
+    def to_dict(self) -> None:
+        """Build the VM resource dict and add blank data-disk entries to it.
+
+        Side effects:
+            Mutates ``self.res`` with dataVolumeTemplates, disks, and volumes for each blank data disk.
+
+        Note:
+            Do not call more than once. Each call appends the blank disks to the resource dict,
+            so a second call will result in duplicate disks.
+        """
+        super().to_dict()
+        template_spec = self.res["spec"]["template"]["spec"]
+        disks = template_spec["domain"]["devices"]["disks"]
+        volumes = template_spec["volumes"]
+        dv_templates = self.res["spec"]["dataVolumeTemplates"]
+
+        for disk_index in range(1, self.data_disk_count + 1):
+            volume_name = data_disk_name(index=disk_index, unique_suffix=self.unique_suffix)
+            dv_templates.append(
+                blank_data_disk_template(
+                    name=volume_name,
+                    namespace=self.namespace,
+                    storage_class_name=self.data_disk_storage_class_name,
+                )
+            )
+            disks.append({"disk": {"bus": self.disk_type}, "name": volume_name})
+            volumes.append({"name": volume_name, "dataVolume": {"name": volume_name}})
 
 
 def guest_volume_target(vm: VirtualMachine, volume_name: str) -> str | None:

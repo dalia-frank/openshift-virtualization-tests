@@ -4,7 +4,6 @@ import secrets
 from contextlib import ExitStack
 
 import pytest
-from ocp_resources.datavolume import DataVolume
 from ocp_resources.kubevirt import KubeVirt
 from ocp_resources.persistent_volume_claim import PersistentVolumeClaim
 from ocp_resources.secret import Secret
@@ -16,12 +15,12 @@ from ocp_resources.virtual_machine_cluster_preference import VirtualMachineClust
 
 from tests.storage.cbt.constants import (
     CBT_BOOT_DISK_TEST_DATA_FILE,
-    CBT_DATA_DISK_SIZE,
     CBT_DATA_DISK_TEST_DATA,
     CBT_ENABLED_LABEL,
     CBT_TEST_DATA,
 )
 from tests.storage.cbt.utils import (
+    CbtVmWithDataDisks,
     cbt_pvc_size_for_vm,
     data_disk_name,
     guest_device_path_for_volume,
@@ -36,12 +35,10 @@ from utilities.constants.images import OS_FLAVOR_RHEL
 from utilities.constants.instance_types import RHEL9_PREFERENCE, U1_SMALL
 from utilities.hco import ResourceEditorValidateHCOReconcile
 from utilities.storage import (
-    add_dv_to_vm,
-    construct_datavolume_source_dict,
     data_volume_template_with_source_ref_dict,
     write_file_via_ssh,
 )
-from utilities.virt import VirtualMachineForTests, running_vm
+from utilities.virt import running_vm
 
 
 @pytest.fixture(scope="module")
@@ -97,7 +94,7 @@ def vm_with_cbt_label(
         VirtualMachine: Running VM with CBT enabled and test data written
     """
     data_disk_count = request.param.get("data_disk_count", 0)
-    with VirtualMachineForTests(
+    with CbtVmWithDataDisks(
         name=f"{request.param['name']}-{unique_suffix}",
         namespace=namespace.name,
         client=unprivileged_client,
@@ -109,18 +106,10 @@ def vm_with_cbt_label(
         ),
         os_flavor=OS_FLAVOR_RHEL,
         label=CBT_ENABLED_LABEL,
+        data_disk_storage_class_name=storage_class_name_scope_module,
+        data_disk_count=data_disk_count,
+        unique_suffix=unique_suffix,
     ) as vm:
-        for disk_index in range(1, data_disk_count + 1):
-            data_disk = DataVolume(
-                name=data_disk_name(index=disk_index, unique_suffix=unique_suffix),
-                namespace=namespace.name,
-                source_dict=construct_datavolume_source_dict(source="blank"),
-                size=CBT_DATA_DISK_SIZE,
-                storage_class=storage_class_name_scope_module,
-                api_name="storage",
-            )
-            data_disk.to_dict()
-            add_dv_to_vm(vm=vm, template_dv=data_disk.res)
         running_vm(vm=vm)
         wait_for_vm_cbt_enabled(vm=vm)
         write_file_via_ssh(vm=vm, filename=CBT_BOOT_DISK_TEST_DATA_FILE, content=CBT_TEST_DATA)
