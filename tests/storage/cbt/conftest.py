@@ -326,8 +326,8 @@ def ready_pull_backup_chain(
         Writes new test data to the VM before each incremental backup.
 
     Returns:
-        list: (backup name, backup status) for every backup in the chain, in order (full backup
-            first, followed by each incremental backup).
+        list[tuple[str, Any]]: (backup name, backup status) for every backup in the chain, in
+            order (full backup first, followed by each incremental backup).
     """
     incremental_count = request.param["incremental_count"]
     completed_backups = []

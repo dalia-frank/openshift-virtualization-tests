@@ -214,7 +214,7 @@ def incremental_test_data_file(index: int) -> str:
 
 
 def assert_backup_status_includes_volumes(
-    backup_name: str | None,
+    backup_name: str,
     backup_status: Any,
     expected_volume_names: list[str],
     expected_backup_type: str | None = None,
