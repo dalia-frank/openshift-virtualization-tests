@@ -6,15 +6,14 @@ from contextlib import ExitStack
 import pytest
 from ocp_resources.kubevirt import KubeVirt
 from ocp_resources.secret import Secret
-from pytest_testconfig import config as py_config
 
 from tests.storage.cbt.constants import CBT_ENABLED_LABEL
 from tests.storage.cbt.utils import (
-    backup_tracker_source_ref,
     cbt_backup_pvc,
     cbt_backup_tracker,
     cbt_enabled_vm,
     cbt_push_backup,
+    cbt_source_ref,
     delete_cbt_pull_backup_and_wait_for_export,
     deploy_cbt_pull_backup,
     incremental_test_data,
@@ -132,7 +131,7 @@ def backup_tracker_source(backup_tracker_for_vm):
     Returns:
         dict: Backup tracker source reference
     """
-    return backup_tracker_source_ref(tracker=backup_tracker_for_vm)
+    return cbt_source_ref(resource=backup_tracker_for_vm)
 
 
 @pytest.fixture()
@@ -140,6 +139,7 @@ def push_backup_pvc(
     unprivileged_client,
     namespace,
     vm_with_cbt_label,
+    storage_class_name_scope_module,
     unique_suffix,
 ):
     """
@@ -153,7 +153,7 @@ def push_backup_pvc(
         namespace=namespace.name,
         client=unprivileged_client,
         vm=vm_with_cbt_label,
-        storage_class=py_config["default_storage_class"],
+        storage_class=storage_class_name_scope_module,
     ) as pvc:
         yield pvc
 
@@ -163,6 +163,7 @@ def pull_backup_staging_pvc(
     unprivileged_client,
     namespace,
     vm_with_cbt_label,
+    storage_class_name_scope_module,
     unique_suffix,
 ):
     """
@@ -176,7 +177,7 @@ def pull_backup_staging_pvc(
         namespace=namespace.name,
         client=unprivileged_client,
         vm=vm_with_cbt_label,
-        storage_class=py_config["default_storage_class"],
+        storage_class=storage_class_name_scope_module,
     ) as pvc:
         yield pvc
 
