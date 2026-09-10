@@ -408,12 +408,12 @@ def wait_for_pull_backup_export_deleted(name: str, namespace: str, client: Dynam
     export.wait_deleted(timeout=TIMEOUT_10MIN)
 
 
-def backup_tracker_source_ref(tracker: VirtualMachineBackupTracker) -> dict[str, str]:
-    """VirtualMachineBackup.spec.source reference for a backup tracker."""
+def cbt_source_ref(resource: VirtualMachine | VirtualMachineBackupTracker) -> dict[str, str]:
+    """TypedLocalObjectReference dict for a VirtualMachine or VirtualMachineBackupTracker."""
     return {
-        "apiGroup": VirtualMachineBackupTracker.api_group,
-        "kind": VirtualMachineBackupTracker.kind,
-        "name": tracker.name,
+        "apiGroup": resource.api_group,
+        "kind": resource.kind,
+        "name": resource.name,
     }
 
 
@@ -437,11 +437,7 @@ def cbt_backup_tracker(
         name=f"{vm.name}-tracker",
         namespace=namespace,
         client=client,
-        source={
-            "apiGroup": VirtualMachine.api_group,
-            "kind": VirtualMachine.kind,
-            "name": vm.name,
-        },
+        source=cbt_source_ref(resource=vm),
     ) as tracker:
         yield tracker
 

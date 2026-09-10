@@ -379,6 +379,8 @@ class TestMultipleDiskBackup:
 
 @pytest.mark.special_infra
 @pytest.mark.rwx_default_storage
+# Required at collection for storage_class_matrix_rwx_matrix__module__.
+@pytest.mark.usefixtures("rwx_storage_class_name_scope_module")
 @pytest.mark.parametrize(
     "vm_with_cbt_label",
     [{"name": "cbt-migrate", "storage_class_fixture": "rwx_storage_class_name_scope_module"}],
