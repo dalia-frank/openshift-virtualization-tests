@@ -396,7 +396,6 @@ class TestBackupAfterLiveMigration:
         - At least two worker nodes available
         - Test data written to VM
         - Full backup completed before migration
-        - No active backup export during migration
     """
 
     @pytest.mark.polarion("CNV-16005")
@@ -445,6 +444,7 @@ class TestBackupAfterLiveMigration:
             - Scratch PVC available for pull mode
             - Full backup completed in pull mode
             - Full pull-mode backup export is deleted before migration
+            - No active backup export during migration
 
         Steps:
             1. Delete the full pull-mode backup
