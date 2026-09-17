@@ -6,6 +6,7 @@ from contextlib import ExitStack
 import pytest
 from ocp_resources.kubevirt import KubeVirt
 from ocp_resources.secret import Secret
+from pytest_testconfig import config as py_config
 
 from tests.storage.cbt.constants import CBT_ENABLED_LABEL
 from tests.storage.cbt.utils import (
@@ -139,11 +140,10 @@ def push_backup_pvc(
     unprivileged_client,
     namespace,
     vm_with_cbt_label,
-    storage_class_name_scope_module,
     unique_suffix,
 ):
     """
-    RWO PVC for storing push-mode backup output.
+    RWO PVC for storing push-mode backup output on the cluster default storage class.
 
     Returns:
         PersistentVolumeClaim: PVC for push-mode backup storage
@@ -153,7 +153,7 @@ def push_backup_pvc(
         namespace=namespace.name,
         client=unprivileged_client,
         vm=vm_with_cbt_label,
-        storage_class=storage_class_name_scope_module,
+        storage_class=py_config["default_storage_class"],
     ) as pvc:
         yield pvc
 
@@ -163,11 +163,10 @@ def pull_backup_staging_pvc(
     unprivileged_client,
     namespace,
     vm_with_cbt_label,
-    storage_class_name_scope_module,
     unique_suffix,
 ):
     """
-    RWO staging PVC for pull-mode backup export.
+    RWO staging PVC for pull-mode backup export on the cluster default storage class.
 
     Returns:
         PersistentVolumeClaim: Staging PVC for the pull-mode export
@@ -177,7 +176,7 @@ def pull_backup_staging_pvc(
         namespace=namespace.name,
         client=unprivileged_client,
         vm=vm_with_cbt_label,
-        storage_class=storage_class_name_scope_module,
+        storage_class=py_config["default_storage_class"],
     ) as pvc:
         yield pvc
 
