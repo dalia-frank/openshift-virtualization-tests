@@ -24,6 +24,8 @@ from tests.storage.cbt.utils import (
 from utilities.constants.virt import DV_DISK
 
 
+# Required at collection for storage_class_matrix__module__.
+@pytest.mark.usefixtures("storage_class_name_scope_module")
 @pytest.mark.parametrize(
     "vm_with_cbt_label",
     [{"name": "cbt-full"}],
@@ -103,6 +105,8 @@ class TestFullBackup:
         )
 
 
+# Required at collection for storage_class_matrix__module__.
+@pytest.mark.usefixtures("storage_class_name_scope_module")
 @pytest.mark.parametrize(
     "vm_with_cbt_label",
     [{"name": "cbt-incr"}],
@@ -186,6 +190,8 @@ class TestIncrementalBackup:
         )
 
 
+# Required at collection for storage_class_matrix__module__.
+@pytest.mark.usefixtures("storage_class_name_scope_module")
 @pytest.mark.parametrize(
     "vm_with_cbt_label",
     [{"name": "cbt-multi-incr"}],
@@ -283,6 +289,8 @@ class TestMultipleIncrementalBackups:
             )
 
 
+# Required at collection for storage_class_matrix__module__.
+@pytest.mark.usefixtures("storage_class_name_scope_module")
 @pytest.mark.parametrize(
     "vm_with_cbt_label",
     [{"name": "cbt-multi-disk", "data_disk_count": CBT_MULTI_DISK_DATA_DISK_COUNT}],
