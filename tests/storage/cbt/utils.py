@@ -160,7 +160,6 @@ def cbt_enabled_vm(
     unique_suffix: str,
     data_disk_count: int = 0,
     windows: bool = False,
-    cpu_model: str | None = None,
 ) -> Generator[VirtualMachineForTests]:
     """Create a running CBT-enabled VM with test data written to every disk.
 
@@ -173,7 +172,6 @@ def cbt_enabled_vm(
         unique_suffix: Suffix used in additional data disk names.
         data_disk_count: Number of blank data disks to attach before first start.
         windows: Create a Windows Server 2022 VM with persistent vTPM instead of RHEL.
-        cpu_model: Optional CPU model. Windows VMs should pass a modern CPU model for TPM 2.0.
 
     Yields:
         VirtualMachineForTests: Running VM with CBT enabled and test data written.
@@ -202,7 +200,6 @@ def cbt_enabled_vm(
         label=CBT_ENABLED_LABEL,
         tpm_params=CBT_WINDOWS_PERSISTENT_DEVICE_PARAMS if windows else None,
         efi_params=CBT_WINDOWS_PERSISTENT_DEVICE_PARAMS if windows else None,
-        cpu_model=cpu_model,
         data_disk_storage_class_name=storage_class,
         data_disk_count=data_disk_count,
         unique_suffix=unique_suffix,

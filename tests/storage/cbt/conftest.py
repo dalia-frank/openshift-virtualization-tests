@@ -101,7 +101,6 @@ def vm_with_cbt_label(
         "windows_validation_os_images_data_source_scope_session" if windows else "rhel9_data_source_scope_session"
     )
     data_source = request.getfixturevalue(argname=request.param.get("data_source_fixture", default_data_source_fixture))
-    cpu_model = request.getfixturevalue(argname="modern_cpu_for_migration") if windows else None
     with cbt_enabled_vm(
         name=f"{request.param['name']}-{unique_suffix}",
         namespace=namespace.name,
@@ -111,7 +110,6 @@ def vm_with_cbt_label(
         unique_suffix=unique_suffix,
         data_disk_count=request.param.get("data_disk_count", 0),
         windows=windows,
-        cpu_model=cpu_model,
     ) as vm:
         yield vm
 
