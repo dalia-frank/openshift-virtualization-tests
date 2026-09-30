@@ -194,8 +194,13 @@ class TestConsole:
         console = Console(vm=mock_vm)
         body_error = pexpect.exceptions.TIMEOUT("file check")
 
-        with patch.object(console, "disconnect", side_effect=pexpect.exceptions.TIMEOUT("prompt")):
-            console.__exit__(type(body_error), body_error, None)
+        with (
+            patch.object(console, "connect", return_value=MagicMock()),
+            patch.object(console, "disconnect", side_effect=pexpect.exceptions.TIMEOUT("prompt")),
+            pytest.raises(pexpect.exceptions.TIMEOUT, match="file check"),
+        ):
+            with console:
+                raise body_error
 
     @patch("console.get_data_collector_base_directory")
     def test_console_exit_raises_when_only_disconnect_fails(self, mock_get_dir):
@@ -281,7 +286,7 @@ class TestConsole:
         console.child.sendline.assert_any_call("testuser")
         console.child.expect.assert_any_call("Password:")
         console.child.sendline.assert_any_call("testpass")
-        console.child.expect.assert_any_call(DEFAULT_SHELL_PROMPT)
+        console.child.expect.assert_any_call(DEFAULT_SHELL_PROMPT, timeout=TIMEOUT_2MIN)
 
     @patch("console.get_data_collector_base_directory")
     def test_console_connect_username_only(self, mock_get_dir):
@@ -349,6 +354,7 @@ class TestConsole:
         console._connect()
 
         console.child.expect.assert_any_call(["login:", *DEFAULT_SHELL_PROMPT], timeout=60)
+        console.child.expect.assert_any_call(DEFAULT_SHELL_PROMPT, timeout=60)
 
     @patch("console.get_data_collector_base_directory")
     def test_console_connect_no_username(self, mock_get_dir):
@@ -368,7 +374,7 @@ class TestConsole:
 
         # Should only send newlines and expect prompt
         console.child.send.assert_any_call("\n\n")
-        console.child.expect.assert_any_call(DEFAULT_SHELL_PROMPT)
+        console.child.expect.assert_any_call(DEFAULT_SHELL_PROMPT, timeout=TIMEOUT_2MIN)
         # Should not expect login prompt
         login_calls = [call for call in console.child.expect.call_args_list if "login:" in str(call)]
         assert len(login_calls) == 0
@@ -706,6 +712,32 @@ class TestConsole:
             mock_sampler.side_effect = lambda: setattr(console, "child", mock_child)
             with pytest.raises(pexpect.exceptions.TIMEOUT):
                 console.connect()
+
+        mock_child.close.assert_called_once()
+        mock_terminate.assert_called_once()
+
+    @patch("console.get_data_collector_base_directory")
+    def test_console_connect_oserror_cleans_up_before_retry(self, mock_get_dir):
+        """An OSError during connect closes the child before the caller sees it."""
+        mock_get_dir.return_value = "/tmp/data"
+        mock_vm = MagicMock()
+        mock_vm.name = "test-vm"
+        mock_vm.namespace = None
+        mock_vm.username = "user"
+        mock_vm.password = "pass"
+        mock_vm.login_params = {}
+
+        console = Console(vm=mock_vm)
+        mock_child = MagicMock()
+
+        with (
+            patch("timeout_sampler.TimeoutSampler", _single_attempt_sampler),
+            patch.object(console, "console_eof_sampler", side_effect=lambda: setattr(console, "child", mock_child)),
+            patch.object(console, "_connect", side_effect=OSError("console write failed")),
+            patch.object(console, "_terminate_proc") as mock_terminate,
+            pytest.raises(OSError, match="console write failed"),
+        ):
+            console.connect()
 
         mock_child.close.assert_called_once()
         mock_terminate.assert_called_once()

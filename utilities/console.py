@@ -90,7 +90,7 @@ class Console:
         try:
             self.console_eof_sampler()
             self._connect()
-        except TimeoutExpiredError, pexpect.exceptions.ExceptionPexpect:
+        except TimeoutExpiredError, pexpect.exceptions.ExceptionPexpect, OSError:
             LOGGER.exception(f"Failed to connect to {self.vm.name} console.")
             if self.child is not None:
                 self.child.close()
@@ -122,7 +122,7 @@ class Console:
                 return
 
         LOGGER.info(f"{self.vm.name}: waiting for terminal prompt '{self.prompt}'")
-        self.child.expect(self.prompt)
+        self.child.expect(self.prompt, timeout=self.login_timeout)
         LOGGER.info(f"{self.vm.name}: Got prompt {self.prompt}")
 
     def disconnect(self):
