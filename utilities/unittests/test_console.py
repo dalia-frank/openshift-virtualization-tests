@@ -289,6 +289,34 @@ class TestConsole:
         console.child.expect.assert_any_call(DEFAULT_SHELL_PROMPT, timeout=TIMEOUT_2MIN)
 
     @patch("console.get_data_collector_base_directory")
+    def test_console_post_login_prompt_can_arrive_after_command_timeout(self, mock_get_dir):
+        """A shell prompt after login can arrive after the 30-second command timeout."""
+        mock_get_dir.return_value = "/tmp/data"
+        mock_vm = MagicMock()
+        mock_vm.name = "test-vm"
+        mock_vm.namespace = None
+        mock_vm.username = "testuser"
+        mock_vm.password = "testpass"
+        mock_vm.login_params = {}
+
+        console = Console(vm=mock_vm)
+        console.child = MagicMock()
+
+        def expect(pattern, timeout=None):
+            effective_timeout = console.timeout if timeout is None else timeout
+            if pattern == "Password:":
+                return 0
+            if pattern == ["login:", *DEFAULT_SHELL_PROMPT]:
+                return 0
+            if pattern == console.prompt and effective_timeout > console.timeout:
+                return 0
+            raise pexpect.exceptions.TIMEOUT(f"prompt not ready within {effective_timeout}s")
+
+        console.child.expect.side_effect = expect
+
+        console._connect()
+
+    @patch("console.get_data_collector_base_directory")
     def test_console_connect_username_only(self, mock_get_dir):
         """Test _connect method with username only"""
         mock_get_dir.return_value = "/tmp/data"
