@@ -43,13 +43,14 @@ class TestConsole:
             username="custom-user",
             password="custom-pass",
             timeout=60,
+            login_timeout=90,
             prompt=["#", ">"],
         )
 
         assert console.username == "custom-user"
         assert console.password == "custom-pass"
         assert console.timeout == 60
-        assert console.login_timeout == 60
+        assert console.login_timeout == 90
         assert console.prompt == ["#", ">"]
 
     def test_default_prompt_ignores_kernel_smp_banner(self, mock_vm_no_namespace):
@@ -365,8 +366,8 @@ class TestConsole:
         assert console.child.sendline.call_count == 0
 
     @patch("console.get_data_collector_base_directory")
-    def test_console_connect_uses_explicit_timeout_for_login(self, mock_get_dir):
-        """An explicit Console timeout replaces the 2-minute login wait."""
+    def test_console_connect_uses_explicit_login_timeout(self, mock_get_dir):
+        """login_timeout is independent of the command timeout."""
         mock_get_dir.return_value = "/tmp/data"
         mock_vm = MagicMock()
         mock_vm.name = "test-vm"
@@ -375,14 +376,15 @@ class TestConsole:
         mock_vm.password = "testpass"
         mock_vm.login_params = {}
 
-        console = Console(vm=mock_vm, timeout=60)
+        console = Console(vm=mock_vm, timeout=60, login_timeout=90)
         console.child = MagicMock()
         console.child.expect.return_value = 0
 
         console._connect()
 
-        console.child.expect.assert_any_call(["login:", *DEFAULT_SHELL_PROMPT], timeout=60)
-        console.child.expect.assert_any_call(DEFAULT_SHELL_PROMPT, timeout=60)
+        assert console.timeout == 60
+        console.child.expect.assert_any_call(["login:", *DEFAULT_SHELL_PROMPT], timeout=90)
+        console.child.expect.assert_any_call(DEFAULT_SHELL_PROMPT, timeout=90)
 
     @patch("console.get_data_collector_base_directory")
     def test_console_connect_no_username(self, mock_get_dir):

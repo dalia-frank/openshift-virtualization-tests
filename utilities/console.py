@@ -30,7 +30,8 @@ class Console:
         vm: VirtualMachine,
         username: str | None = None,
         password: str | None = None,
-        timeout: int | None = None,
+        timeout: int = TIMEOUT_30SEC,
+        login_timeout: int = TIMEOUT_2MIN,
         prompt: str | list[str] | None = None,
         kubeconfig: str | None = None,
     ) -> None:
@@ -41,8 +42,10 @@ class Console:
             vm: VM resource
             username: VM username
             password: VM password
-            timeout: Command timeout in seconds. The login wait uses this value when set, otherwise 2 minutes.
-            prompt: Shell prompt pattern(s) to expect
+            timeout: Command timeout in seconds.
+            login_timeout: Seconds to wait for the login or an existing shell prompt. Defaults to 2 minutes.
+            prompt: Shell prompt regex or regex patterns to expect. Defaults to ``r"# "`` and ``r"\\$ "``.
+                A trailing space avoids matching kernel banners such as ``#1 SMP``.
             kubeconfig: Path to kubeconfig file for remote cluster access
 
         Examples:
@@ -65,8 +68,8 @@ class Console:
         self.password = (
             password or getattr(self.vm, "login_params", {}).get("password") or self.vm.password  # type: ignore[attr-defined]
         )
-        self.timeout = TIMEOUT_30SEC if timeout is None else timeout
-        self.login_timeout = TIMEOUT_2MIN if timeout is None else timeout
+        self.timeout = timeout
+        self.login_timeout = login_timeout
         self.child: pexpect.fdpexpect.fdspawn | None = None
         self._proc: subprocess.Popen[bytes] | None = None
         self.login_prompt = "login:"
@@ -78,14 +81,18 @@ class Console:
     @retry(
         wait_timeout=TIMEOUT_5MIN,
         sleep=TIMEOUT_10SEC,
-        # A missing login prompt fails once. Retrying it used to hide a normal boot behind an error.
-        # EOF and OSError still retry while virtctl console is not up yet.
         exceptions_dict={
             pexpect.exceptions.EOF: [],
             OSError: [],
         },
     )
     def connect(self):
+        """
+        Open the virtctl console and log in.
+
+        A missing login prompt fails once. Retrying it used to hide a normal boot behind an error.
+        EOF and OSError still retry while virtctl console is not up yet.
+        """
         LOGGER.info(f"Connect to {self.vm.name} console")
         try:
             self.console_eof_sampler()
@@ -103,7 +110,6 @@ class Console:
         self.child.send("\n\n")
         if self.username:
             # Wait for either "login:" or a shell prompt (e.g., "$ " or "# ").
-            # Default login wait is 2 minutes. An explicit Console timeout replaces it.
             patterns = [self.login_prompt] + (self.prompt if isinstance(self.prompt, list) else [self.prompt])
             matched_index = self.child.expect(patterns, timeout=self.login_timeout)
 

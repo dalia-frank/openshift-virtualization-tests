@@ -1720,7 +1720,7 @@ def wait_for_ssh_connectivity(
 
 
 def wait_for_console(vm):
-    with Console(vm=vm, timeout=TIMEOUT_25MIN):
+    with Console(vm=vm, login_timeout=TIMEOUT_25MIN):
         LOGGER.info(f"Successfully connected to {vm.name} console")
 
 
