@@ -1720,12 +1720,8 @@ def wait_for_ssh_connectivity(
 
 
 def wait_for_console(vm):
-    console = Console(vm=vm, login_timeout=TIMEOUT_25MIN)
-    with console:
-        # disconnect() waits on the child timeout. Logout gets the same 25 minutes as login.
-        # Command expects stay at 30 seconds; this helper does not run any.
-        if console.child is not None:
-            console.child.timeout = TIMEOUT_25MIN
+    # The VM is already running. Login uses the 2-minute default; logout uses the 30-second command timeout.
+    with Console(vm=vm):
         LOGGER.info(f"Successfully connected to {vm.name} console")
 
 
