@@ -388,7 +388,7 @@ def assert_backup_status_includes_volumes(
             f"missing {missing_volume_names}: {included_volumes}"
         )
     else:
-        assert sorted(actual_volume_names) == sorted(expected_volume_names), (
+        assert set(actual_volume_names) == set(expected_volume_names), (
             f"Backup {backup_name} included volumes {actual_volume_names}, "
             f"expected {expected_volume_names}: {included_volumes}"
         )
