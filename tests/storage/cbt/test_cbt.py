@@ -668,6 +668,8 @@ class TestWindowsVMFullBackup:
         completed_push_backup_chain,
     ):
         """
+        STP: https://github.com/RedHatQE/openshift-virtualization-tests-design-docs/blob/main/stps/sig-storage/cbt.md
+
         Test that a Windows VM full backup in push mode completes successfully.
 
         Preconditions:
@@ -701,6 +703,8 @@ class TestWindowsVMFullBackup:
         ready_pull_backup_chain,
     ):
         """
+        STP: https://github.com/RedHatQE/openshift-virtualization-tests-design-docs/blob/main/stps/sig-storage/cbt.md
+
         Test that a Windows VM full backup in pull mode becomes ready for export.
 
         Preconditions:
@@ -754,6 +758,8 @@ class TestWindowsVMIncrementalBackup:
         completed_push_backup_chain,
     ):
         """
+        STP: https://github.com/RedHatQE/openshift-virtualization-tests-design-docs/blob/main/stps/sig-storage/cbt.md
+
         Test that a Windows VM incremental backup in push mode completes successfully.
 
         Preconditions:
@@ -788,6 +794,8 @@ class TestWindowsVMIncrementalBackup:
         ready_pull_backup_chain,
     ):
         """
+        STP: https://github.com/RedHatQE/openshift-virtualization-tests-design-docs/blob/main/stps/sig-storage/cbt.md
+
         Test that a Windows VM incremental backup in pull mode becomes ready for export.
 
         Preconditions:
