@@ -642,6 +642,8 @@ class TestConcurrentBackups:
 # Required at collection for storage_class_matrix__module__.
 @pytest.mark.tier3
 @pytest.mark.windows
+@pytest.mark.high_resource_vm
+@pytest.mark.special_infra
 @pytest.mark.usefixtures("storage_class_name_scope_module")
 @pytest.mark.parametrize(
     "vm_with_cbt_label",
@@ -731,6 +733,8 @@ class TestWindowsVMFullBackup:
 # Required at collection for storage_class_matrix__module__.
 @pytest.mark.tier3
 @pytest.mark.windows
+@pytest.mark.high_resource_vm
+@pytest.mark.special_infra
 @pytest.mark.usefixtures("storage_class_name_scope_module")
 @pytest.mark.parametrize(
     "vm_with_cbt_label",
