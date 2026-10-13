@@ -82,10 +82,12 @@ def vm_with_cbt_label(
         name: VM name prefix.
         data_disk_count: Optional int (default 0). Number of blank data disks (named
             "cbt-datadisk-<index>-<unique_suffix>") to attach before first start (avoiding a
-            restart) and write test data to, in addition to the boot disk.
+            restart). On Linux VMs, test data is also written to those disks in addition to
+            the boot disk. Must be 0 when windows is True.
         storage_class_fixture: Optional fixture name that provides the VM disk storage class.
             Defaults to storage_class_name_scope_module.
-        windows: Optional bool (default False). Create a Windows Server 2022 VM with persistent vTPM.
+        windows: Optional bool (default False). Create a Windows Server 2022 VM with persistent
+            vTPM and EFI.
         data_source_fixture: Optional fixture name for the boot-disk DataSource. Defaults to
             rhel9_data_source_scope_session, or windows_validation_os_images_data_source_scope_session
             when windows is True.

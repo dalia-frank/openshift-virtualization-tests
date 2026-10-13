@@ -652,7 +652,7 @@ class TestConcurrentBackups:
 )
 class TestWindowsVMFullBackup:
     """
-    Full backup validation for Windows VMs with persistent vTPM (backup success only).
+    Full backup validation for Windows VMs with persistent vTPM and EFI (backup success only).
 
     Preconditions:
         - Running Windows VM with CBT enabled and persistent vTPM
@@ -675,6 +675,7 @@ class TestWindowsVMFullBackup:
         Test that a Windows VM full backup in push mode completes successfully.
 
         Preconditions:
+            - Running Windows VM with CBT enabled and persistent vTPM
             - Backup PVC available
 
         Steps:
@@ -710,6 +711,7 @@ class TestWindowsVMFullBackup:
         Test that a Windows VM full backup in pull mode becomes ready for export.
 
         Preconditions:
+            - Running Windows VM with CBT enabled and persistent vTPM
             - Scratch PVC available for pull mode
 
         Steps:
@@ -743,7 +745,7 @@ class TestWindowsVMFullBackup:
 )
 class TestWindowsVMIncrementalBackup:
     """
-    Incremental backup validation for Windows VMs with persistent vTPM (backup success only).
+    Incremental backup validation for Windows VMs with persistent vTPM and EFI (backup success only).
 
     Preconditions:
         - Running Windows VM with CBT enabled and persistent vTPM
@@ -767,6 +769,7 @@ class TestWindowsVMIncrementalBackup:
         Test that a Windows VM incremental backup in push mode completes successfully.
 
         Preconditions:
+            - Running Windows VM with CBT enabled and persistent vTPM
             - Backup PVC available
             - Full backup completed in push mode
 
@@ -803,6 +806,7 @@ class TestWindowsVMIncrementalBackup:
         Test that a Windows VM incremental backup in pull mode becomes ready for export.
 
         Preconditions:
+            - Running Windows VM with CBT enabled and persistent vTPM
             - Scratch PVC available for pull mode
 
         Steps:

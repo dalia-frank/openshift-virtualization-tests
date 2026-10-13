@@ -161,7 +161,7 @@ def cbt_enabled_vm(
     data_disk_count: int = 0,
     windows: bool = False,
 ) -> Generator[VirtualMachineForTests]:
-    """Create a running CBT-enabled VM with test data written to every disk.
+    """Create a running CBT-enabled VM with test data written to the boot disk.
 
     Args:
         name: VM name.
@@ -171,15 +171,22 @@ def cbt_enabled_vm(
         storage_class: Storage class for the boot disk and additional data disks.
         unique_suffix: Suffix used in additional data disk names.
         data_disk_count: Number of blank data disks to attach before first start.
-        windows: Create a Windows Server 2022 VM with persistent vTPM instead of RHEL.
+            Test data is written to those disks on Linux VMs only. Must be 0 for Windows VMs.
+        windows: Create a Windows Server 2022 VM with persistent vTPM and EFI instead of RHEL.
 
     Yields:
         VirtualMachineForTests: Running VM with CBT enabled and test data written.
 
     Side effects:
         Creates the VM (and optional blank data disks), starts it, waits for CBT
-        Enabled, and writes test data to the boot disk and every data disk.
+        Enabled, and writes test data to the boot disk. On Linux VMs, also writes
+        test data to every additional data disk.
+
+    Raises:
+        ValueError: If ``windows`` is True and ``data_disk_count`` is greater than 0.
     """
+    if windows and data_disk_count > 0:
+        raise ValueError("Windows CBT VMs do not support additional data disks with test data writes")
     with CbtVmWithDataDisks(
         name=name,
         namespace=namespace,
@@ -343,15 +350,30 @@ def incremental_test_data(index: int) -> str:
     return f"cbt-incremental-{index}-backup-test-data"
 
 
-def incremental_test_data_file(index: int, vm: VirtualMachineForTests | None = None) -> str:
-    """Guest file path written before the Nth (1-indexed) incremental backup in a backup chain."""
-    if vm is not None and is_windows_cbt_vm(vm=vm):
+def incremental_test_data_file(index: int, vm: VirtualMachineForTests) -> str:
+    """Guest file path written before the Nth (1-indexed) incremental backup in a backup chain.
+
+    Args:
+        index: 1-indexed backup number in the incremental backup chain.
+        vm: Virtual machine instance used to choose the guest OS path.
+
+    Returns:
+        str: Guest file path for test data.
+    """
+    if is_windows_cbt_vm(vm=vm):
         return CBT_WINDOWS_INCREMENTAL_TEST_DATA_FILE.format(index=index)
     return f"/tmp/cbt-incremental-{index}-test-data.txt"
 
 
 def cbt_backup_wait_timeout(vm: VirtualMachineForTests) -> int:
-    """Timeout for push-complete and pull export-ready waits."""
+    """Timeout for push-complete and pull export-ready waits.
+
+    Args:
+        vm: Virtual machine instance used to choose the wait timeout.
+
+    Returns:
+        int: Wait timeout in seconds.
+    """
     if is_windows_cbt_vm(vm=vm):
         return TIMEOUT_30MIN
     return TIMEOUT_10MIN
@@ -388,7 +410,7 @@ def assert_backup_status_includes_volumes(
             f"missing {missing_volume_names}: {included_volumes}"
         )
     else:
-        assert set(actual_volume_names) == set(expected_volume_names), (
+        assert sorted(actual_volume_names) == sorted(expected_volume_names), (
             f"Backup {backup_name} included volumes {actual_volume_names}, "
             f"expected {expected_volume_names}: {included_volumes}"
         )
