@@ -213,7 +213,7 @@ def cbt_enabled_vm(
     ) as vm:
         running_vm(
             vm=vm,
-            dv_wait_timeout=TIMEOUT_60MIN if windows else TIMEOUT_30MIN,
+            dv_wait_timeout=TIMEOUT_60MIN if windows else TIMEOUT_10MIN,
             ssh_timeout=TIMEOUT_10MIN if windows else TIMEOUT_2MIN,
         )
         if windows:
